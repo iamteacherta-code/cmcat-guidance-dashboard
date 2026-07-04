@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>งานแนะแนว วษท.เชียงใหม่ · ระบบประมวลผลข้อมูล</title>
+  <link rel="icon" type="image/webp" href="assets/img/logo.webp" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo"><img src="assets/img/logo.webp" alt="ตราวิทยาลัยเกษตรและเทคโนโลยีเชียงใหม่" /></div>
+      <div>
+        <h1 id="collegeName">วิทยาลัยเกษตรและเทคโนโลยีเชียงใหม่</h1>
+        <p id="deptName" class="dept"></p>
+      </div>
+    </div>
+    <div class="updated" id="updated"></div>
+  </header>
+
+  <nav class="nav">
+    <a href="#overview" class="active">ภาพรวม</a>
+    <a href="#enrollment">จำนวนนักเรียน</a>
+    <a href="#admission">การรับสมัคร 2569</a>
+    <a href="#survey">กลุ่มเป้าหมาย</a>
+    <a href="#graduates">ภาวะผู้จบ</a>
+    <a href="#staff">ผู้ปฏิบัติงาน</a>
+    <a href="#analysis">วิเคราะห์เพื่ออนาคต</a>
+  </nav>
+
+  <main>
+    <!-- 1 ภาพรวม -->
+    <section id="overview" class="panel">
+      <h2><span class="num-badge">1</span> ภาพรวมงานแนะแนว</h2>
+      <div id="kpis" class="kpi-grid"></div>
+      <p id="overviewNote" class="callout"></p>
+    </section>
+
+    <!-- 2 จำนวนนักเรียน -->
+    <section id="enrollment" class="panel">
+      <h2><span class="num-badge">2</span> จำนวนนักเรียน–นักศึกษา 10 ปีย้อนหลัง</h2>
+      <p class="sub">จำนวน นร.นศ. ในระบบ (ปวช./ปวส./ป.ตรี) รายงานงวดที่ 3 วันที่ 10 มิ.ย. ของแต่ละปี</p>
+      <div class="split">
+        <div class="card chart-card"><div id="enrollChart"></div></div>
+        <div class="card" id="enrollTable"></div>
+      </div>
+    </section>
+
+    <!-- 3 การรับสมัคร -->
+    <section id="admission" class="panel">
+      <h2><span class="num-badge">3</span> ผลการรับสมัครนักศึกษาใหม่ ปีการศึกษา 2569</h2>
+      <p class="sub">สมัคร 3 รอบ แยกระดับ ปวช./ปวส. และช่องทางการสมัคร</p>
+      <div class="split">
+        <div class="card chart-card"><h3>ผู้สมัครแต่ละรอบ (แยกระดับ)</h3><div id="admRoundChart"></div></div>
+        <div class="card chart-card"><h3>ช่องทางการสมัคร</h3><div id="admChannelChart"></div></div>
+      </div>
+      <div class="card" id="admTable"></div>
+      <p id="admNote" class="callout"></p>
+    </section>
+
+    <!-- 4 กลุ่มเป้าหมาย -->
+    <section id="survey" class="panel">
+      <h2><span class="num-badge">4</span> กลุ่มเป้าหมาย &amp; ช่องทางแนะแนวที่ได้ผล</h2>
+      <p class="sub">จากแบบสำรวจการตัดสินใจเข้าเรียนของนักศึกษาใหม่ (ผู้ตอบ 85 คน)</p>
+      <div class="grid-2">
+        <div class="card chart-card"><h3>ระดับที่เข้าเรียน</h3><div id="svLevel"></div></div>
+        <div class="card chart-card"><h3>ผู้มีอิทธิพลต่อการตัดสินใจ</h3><div id="svInfluence"></div></div>
+        <div class="card chart-card wide"><h3>ทราบข่าวการรับสมัครจากช่องทางใด</h3><div id="svChannel"></div></div>
+        <div class="card chart-card wide"><h3>เหตุผลหลักที่เลือกเรียนที่นี่</h3><div id="svReason"></div></div>
+      </div>
+      <p id="svNote" class="callout"></p>
+    </section>
+
+    <!-- 5 ภาวะผู้จบ -->
+    <section id="graduates" class="panel">
+      <h2><span class="num-badge">5</span> ภาวะการมีงานทำและศึกษาต่อของผู้สำเร็จการศึกษา</h2>
+      <p class="sub">ติดตามผู้จบเพื่อสะท้อนคุณภาพ — เป็น “จุดขาย” สำคัญของการแนะแนว</p>
+      <div class="card chart-card"><h3>เปรียบเทียบรายปี</h3><div id="gradChart"></div></div>
+      <div class="card">
+        <div class="card-head">
+          <h3>รายละเอียดตามสาขาวิชา</h3>
+          <div class="year-pick">
+            <label>เลือกปี:</label>
+            <select id="gradYearSel"></select>
+            <span id="gradRound" class="tag"></span>
+          </div>
+        </div>
+        <div id="gradTable"></div>
+      </div>
+    </section>
+
+    <!-- 6 ผู้ปฏิบัติงาน -->
+    <section id="staff" class="panel">
+      <h2><span class="num-badge">6</span> ผู้ปฏิบัติงานแนะแนว</h2>
+      <p class="sub">โครงสร้างและบทบาทหน้าที่ของทีมงานแนะแนว</p>
+      <div id="staffGrid" class="staff-grid"></div>
+      <p class="edit-note">✎ <span id="staffNote"></span></p>
+    </section>
+
+    <!-- 7 วิเคราะห์ -->
+    <section id="analysis" class="panel">
+      <h2><span class="num-badge">7</span> การวิเคราะห์ผลเพื่ออนาคต</h2>
+      <p id="projText" class="callout projection"></p>
+      <div id="swot" class="swot-grid"></div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p id="sourceFoot"></p>
+    <p>© <span id="yearFoot"></span> งานแนะแนว วิทยาลัยเกษตรและเทคโนโลยีเชียงใหม่ · จัดทำเพื่อการประมวลผลและวางแผนภายใน</p>
+  </footer>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/charts.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

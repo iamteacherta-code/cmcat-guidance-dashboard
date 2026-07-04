@@ -1,0 +1,163 @@
+/* =====================================================================
+   styles.css — งานแนะแนว วษท.เชียงใหม่  (โทนสีเขียวเกษตร)
+   ===================================================================== */
+:root{
+  --green:#2e7d32; --green-d:#1b5e20; --green-l:#66bb6a; --green-bg:#e8f5e9;
+  --gold:#f9a825; --blue:#0277bd; --orange:#ef6c00;
+  --ink:#1f2d24; --muted:#65756b; --line:#e2e8e2; --bg:#f4f7f3; --card:#fff;
+  --pos:#2e7d32; --neg:#c62828;
+  --shadow:0 2px 10px rgba(30,60,40,.07); --radius:16px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Sarabun","Leelawadee UI","Noto Sans Thai",Tahoma,sans-serif;
+  line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- header ---------- */
+.topbar{
+  background:linear-gradient(120deg,var(--green-d),var(--green));
+  color:#fff; padding:18px 26px; display:flex; justify-content:space-between;
+  align-items:center; flex-wrap:wrap; gap:12px;
+}
+.brand{display:flex; align-items:center; gap:14px}
+.logo{
+  width:58px;height:58px;border-radius:50%;background:#fff;
+  display:grid;place-items:center;flex:none;overflow:hidden;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);padding:3px;
+}
+.logo img{width:100%;height:100%;object-fit:contain;display:block;border-radius:50%}
+.topbar h1{font-size:1.15rem;margin:0;font-weight:700;letter-spacing:.2px}
+.dept{margin:2px 0 0;font-size:.86rem;opacity:.9;font-weight:400}
+.updated{font-size:.8rem;opacity:.9;background:rgba(255,255,255,.14);
+  padding:6px 12px;border-radius:20px}
+
+/* ---------- nav ---------- */
+.nav{
+  position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+  display:flex;gap:4px;padding:8px 16px;overflow-x:auto;
+}
+.nav a{
+  white-space:nowrap;color:var(--muted);text-decoration:none;font-size:.9rem;
+  font-weight:600;padding:8px 14px;border-radius:10px;transition:.15s;
+}
+.nav a:hover{background:var(--green-bg);color:var(--green-d)}
+.nav a.active{background:var(--green);color:#fff}
+
+/* ---------- layout ---------- */
+main{max-width:1080px;margin:0 auto;padding:8px 18px 40px}
+.panel{padding:30px 0 10px;scroll-margin-top:64px;border-bottom:1px dashed var(--line)}
+.panel:last-child{border-bottom:none}
+.panel h2{
+  font-size:1.32rem;display:flex;align-items:center;gap:12px;margin:.2em 0 .3em;
+  color:var(--green-d)
+}
+.num-badge{
+  width:32px;height:32px;border-radius:50%;background:var(--green);color:#fff;
+  display:grid;place-items:center;font-size:.95rem;flex:none;
+}
+.sub{color:var(--muted);margin:.1em 0 1.1em;font-size:.94rem}
+h3{font-size:1rem;margin:0 0 12px;color:var(--ink)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+.card-head{display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:10px;margin-bottom:6px}
+.card-head h3{margin:0}
+
+.split{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-2 .wide{grid-column:1 / -1}
+@media(max-width:760px){.split,.grid-2{grid-template-columns:1fr}}
+
+/* ---------- KPI ---------- */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:6px}
+@media(max-width:760px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px}
+.kpi-up::before{background:var(--green)}
+.kpi-down::before{background:var(--orange)}
+.kpi-info::before{background:var(--blue)}
+.kpi-big{font-size:1.9rem;font-weight:800;color:var(--green-d);line-height:1.1}
+.kpi-cap{font-size:.86rem;color:var(--ink);margin-top:4px;font-weight:600}
+.kpi-sub{font-size:.78rem;color:var(--muted);margin-top:3px}
+
+/* ---------- callout ---------- */
+.callout{background:var(--green-bg);border-left:4px solid var(--green);
+  padding:14px 16px;border-radius:10px;font-size:.94rem;margin:14px 0}
+.callout.projection{background:#fff8e1;border-color:var(--gold)}
+.pos{color:var(--pos);font-weight:700}
+.neg{color:var(--neg);font-weight:700}
+
+/* ---------- table ---------- */
+.tbl{width:100%;border-collapse:collapse;font-size:.9rem}
+.tbl th,.tbl td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left}
+.tbl th{color:var(--muted);font-weight:600;font-size:.82rem;background:#fafcfa}
+.tbl td.num,.tbl th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl .strong{font-weight:700}
+.total-row td{background:var(--green-bg);font-weight:700;border-top:2px solid var(--green-l)}
+.report-row td{background:#e3f2fd;font-weight:700}
+.muted-sm{color:var(--muted);font-size:.76rem;margin-top:2px}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.78rem;font-weight:700}
+.pill.ok{background:#e8f5e9;color:var(--green-d)}
+.pill.mid{background:#fff8e1;color:#b8860b}
+.pill.low{background:#ffebee;color:var(--neg)}
+
+/* ---------- charts ---------- */
+.chart{width:100%;height:auto;display:block}
+.chart-card h3{margin-bottom:6px}
+.grid{stroke:#eef2ee;stroke-width:1}
+.axis-x{font-size:12px;fill:var(--muted);text-anchor:middle}
+.axis-y{font-size:11px;fill:var(--muted);text-anchor:end}
+.line-path{fill:none;stroke:var(--green);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.dot{fill:#fff;stroke:var(--green);stroke-width:2.5}
+.point-label{font-size:11.5px;fill:var(--green-d);text-anchor:middle;font-weight:700}
+.bar{transition:opacity .15s}.bar:hover{opacity:.82}
+.bar-in{font-size:11px;fill:#fff;text-anchor:middle;font-weight:600;pointer-events:none}
+.slice{transition:opacity .15s;cursor:default}.slice:hover{opacity:.85}
+.donut-wrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:center}
+.donut-num{font-size:26px;font-weight:800;fill:var(--green-d);text-anchor:middle}
+.donut-cap{font-size:12px;fill:var(--muted);text-anchor:middle}
+.hbar-label{font-size:12.5px;fill:var(--ink);text-anchor:end}
+.hbar-val{font-size:12px;fill:var(--muted);font-weight:600}
+.hbar-bg{fill:#f0f4f0}
+
+/* ---------- legend ---------- */
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;justify-content:center}
+.legend-item{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:var(--ink)}
+.legend-item i{width:12px;height:12px;border-radius:3px;display:inline-block}
+
+/* ---------- staff ---------- */
+.staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.staff-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;box-shadow:var(--shadow);border-top:4px solid var(--green-l)}
+.staff-role{font-size:.75rem;color:#fff;background:var(--green);display:inline-block;
+  padding:2px 10px;border-radius:20px;font-weight:600;margin-bottom:8px}
+.staff-name{font-weight:700;font-size:.98rem}
+.staff-task{font-size:.83rem;color:var(--muted);margin-top:5px}
+.edit-note{font-size:.82rem;color:var(--muted);background:#fffde7;padding:10px 14px;
+  border-radius:10px;border:1px dashed var(--gold)}
+.year-pick{display:flex;align-items:center;gap:8px;font-size:.88rem}
+.year-pick select{padding:6px 10px;border-radius:8px;border:1px solid var(--line);
+  font-family:inherit;font-size:.9rem;background:#fff}
+.tag{background:#fff8e1;color:#b8860b;font-size:.76rem;padding:3px 10px;border-radius:20px;font-weight:600}
+
+/* ---------- SWOT ---------- */
+.swot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:8px}
+@media(max-width:860px){.swot-grid{grid-template-columns:1fr}}
+.swot{border-radius:var(--radius);padding:16px 18px;border:1px solid var(--line)}
+.swot h4{margin:0 0 10px;font-size:1rem}
+.swot ul{margin:0;padding-left:18px;font-size:.9rem}
+.swot li{margin-bottom:8px}
+.swot-strong{background:#e8f5e9;border-color:#a5d6a7}
+.swot-risk{background:#fff3e0;border-color:#ffcc80}
+.swot-action{background:#e3f2fd;border-color:#90caf9}
+
+/* ---------- footer ---------- */
+.foot{text-align:center;color:var(--muted);font-size:.82rem;padding:24px 18px;
+  border-top:1px solid var(--line);background:#fff}
+.foot p{margin:4px 0}
