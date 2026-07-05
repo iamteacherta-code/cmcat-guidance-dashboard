@@ -33,6 +33,27 @@
     <a href="#analysis">วิเคราะห์เพื่ออนาคต</a>
   </nav>
 
+  <div class="toolbar">
+    <button onclick="Tools.printAll()" class="tbtn tbtn-primary">🖨️ พิมพ์รายงานทั้งหมด</button>
+    <div class="tbtn-group">
+      <button onclick="Tools.exportCSV()" class="tbtn">⬇️ Excel (CSV)</button>
+      <button onclick="Tools.exportJSON()" class="tbtn">⬇️ ข้อมูล (JSON)</button>
+    </div>
+    <div class="tbtn-group">
+      <button onclick="document.getElementById('importFile').click()" class="tbtn">⬆️ นำเข้าข้อมูล</button>
+      <input type="file" id="importFile" accept=".json" hidden
+             onchange="if(this.files[0])Tools.importJSON(this.files[0])" />
+      <button onclick="Tools.exportDataJS()" class="tbtn" title="ดาวน์โหลดไฟล์ data.js เพื่อนำไปเผยแพร่บนลิงค์สาธารณะ">⬇️ ไฟล์เผยแพร่</button>
+    </div>
+    <a class="tbtn tbtn-ghost" href="#" onclick="alert('ระบบหลังบ้าน (ทะเบียนนักเรียน + ระดับการดูแล) เป็นข้อมูลส่วนบุคคล จึงเปิดใช้เฉพาะในเครื่องของงานแนะแนว ไม่เผยแพร่ออนไลน์\\n\\nเปิดไฟล์: backoffice/index.html');return false;">🔒 ระบบหลังบ้าน</a>
+  </div>
+
+  <div id="overrideBanner" class="override-banner" hidden>
+    ⚠️ กำลังแสดง <b>ข้อมูลที่นำเข้าชั่วคราว</b> (เฉพาะเครื่องนี้ ยังไม่เผยแพร่ให้คนอื่นเห็น)
+    <button onclick="Tools.exportDataJS()" class="link-btn">ดาวน์โหลดไฟล์เผยแพร่</button> ·
+    <button onclick="Tools.clearOverride()" class="link-btn">กลับไปใช้ข้อมูลเดิม</button>
+  </div>
+
   <main>
     <!-- 1 ภาพรวม -->
     <section id="overview" class="panel">
@@ -117,6 +138,7 @@
 
   <script src="assets/js/data.js"></script>
   <script src="assets/js/charts.js"></script>
+  <script src="assets/js/tools.js"></script>
   <script src="assets/js/app.js"></script>
 </body>
 </html>

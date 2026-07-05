@@ -3,6 +3,8 @@
    ===================================================================== */
 (() => {
   const $ = s => document.querySelector(s);
+  // นำข้อมูลที่นำเข้า (ถ้ามี) มาทับ "ก่อน" คำนวณค่าใด ๆ ด้านล่าง
+  if (typeof Tools !== "undefined") Tools.applyOverride();
   const fmt = Chart.fmt;
   const C = { study: "#2e7d32", work: "#0277bd", seek: "#ef6c00", other: "#9e9e9e",
               pvc: "#2e7d32", pvs: "#66bb6a", direct: "#0277bd", online: "#f9a825" };
@@ -255,14 +257,31 @@
     sections.forEach(s => io.observe(s));
   }
 
+  /* ---------- ปุ่มพิมพ์เฉพาะหน้า (ฉีดเข้าแต่ละหัวข้อ) ---------- */
+  function injectSectionTools() {
+    document.querySelectorAll("main section.panel").forEach(sec => {
+      const h2 = sec.querySelector("h2");
+      if (!h2) return;
+      const btn = document.createElement("button");
+      btn.className = "print-sec-btn no-print";
+      btn.title = "พิมพ์เฉพาะหัวข้อนี้";
+      btn.textContent = "🖨️";
+      btn.onclick = () => Tools.printSection(sec);
+      h2.appendChild(btn);
+    });
+  }
+
   /* ================= init ================= */
   document.addEventListener("DOMContentLoaded", () => {
+    if (typeof Tools !== "undefined" && Tools.hasOverride()) {
+      const b = $("#overrideBanner"); if (b) b.hidden = false;
+    }
     $("#collegeName").textContent = CMCAT.meta.college;
     $("#deptName").textContent = CMCAT.meta.department;
     $("#updated").textContent = "ข้อมูลล่าสุด: " + CMCAT.meta.updated;
     $("#sourceFoot").textContent = "แหล่งข้อมูล: " + CMCAT.meta.source;
     $("#yearFoot").textContent = new Date().getFullYear() + 543;
     overview(); enrollment(); admission(); survey(); graduates(); staff(); analysis();
-    nav();
+    nav(); injectSectionTools();
   });
 })();

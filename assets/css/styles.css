@@ -47,6 +47,27 @@ body{
 .nav a:hover{background:var(--green-bg);color:var(--green-d)}
 .nav a.active{background:var(--green);color:#fff}
 
+/* ---------- toolbar ---------- */
+.toolbar{max-width:1080px;margin:12px auto 0;padding:0 18px;display:flex;
+  flex-wrap:wrap;gap:8px;align-items:center}
+.tbtn-group{display:flex;gap:6px;flex-wrap:wrap}
+.tbtn{font-family:inherit;font-size:.84rem;font-weight:600;cursor:pointer;
+  border:1px solid var(--line);background:#fff;color:var(--ink);
+  padding:8px 13px;border-radius:9px;transition:.15s;white-space:nowrap}
+.tbtn:hover{background:var(--green-bg);border-color:var(--green-l)}
+.tbtn-primary{background:var(--green);color:#fff;border-color:var(--green)}
+.tbtn-primary:hover{background:var(--green-d)}
+.tbtn-ghost{margin-left:auto;text-decoration:none;color:var(--muted)}
+.tbtn-ghost:hover{color:var(--green-d)}
+@media(max-width:640px){.tbtn-ghost{margin-left:0}}
+.override-banner{max-width:1080px;margin:10px auto 0;padding:10px 16px;font-size:.88rem;
+  background:#fff8e1;border:1px solid var(--gold);border-radius:10px}
+.link-btn{background:none;border:none;color:var(--blue);text-decoration:underline;
+  cursor:pointer;font-family:inherit;font-size:.88rem;padding:0}
+.print-sec-btn{background:none;border:none;cursor:pointer;font-size:.85rem;opacity:.35;
+  margin-left:6px;transition:.15s;padding:2px 4px}
+.print-sec-btn:hover{opacity:1}
+
 /* ---------- layout ---------- */
 main{max-width:1080px;margin:0 auto;padding:8px 18px 40px}
 .panel{padding:30px 0 10px;scroll-margin-top:64px;border-bottom:1px dashed var(--line)}
@@ -161,3 +182,20 @@ h3{font-size:1rem;margin:0 0 12px;color:var(--ink)}
 .foot{text-align:center;color:var(--muted);font-size:.82rem;padding:24px 18px;
   border-top:1px solid var(--line);background:#fff}
 .foot p{margin:4px 0}
+
+/* ---------- การพิมพ์ ---------- */
+@media print{
+  :root{--bg:#fff}
+  body{background:#fff}
+  .nav,.toolbar,.override-banner,.no-print,.print-sec-btn,.updated{display:none !important}
+  .topbar{background:var(--green-d) !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .card,.kpi,.staff-card,.swot{box-shadow:none;break-inside:avoid}
+  .panel{break-inside:avoid;border-bottom:none;padding:16px 0}
+  .split,.grid-2{grid-template-columns:1fr 1fr}
+  main{max-width:none;padding:0 6mm}
+  .chart{max-height:70mm}
+  a[href]:after{content:""}
+  .bar,.slice,.line-path,.kpi::before{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.printing-section .print-hide{display:none !important}
+  @page{margin:12mm}
+}
