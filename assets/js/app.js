@@ -66,6 +66,99 @@
       ผ่านช่องทางที่ได้ผลจริง`;
   }
 
+  /* ========= 1.5 แผนที่ต้นทางนักศึกษา (ภาคเหนือ) ========= */
+  function lerpHex(a, b, t) {
+    const h = x => [parseInt(x.slice(1, 3), 16), parseInt(x.slice(3, 5), 16), parseInt(x.slice(5, 7), 16)];
+    const [r1, g1, b1] = h(a), [r2, g2, b2] = h(b);
+    const m = (u, v) => Math.round(u + (v - u) * t);
+    return `rgb(${m(r1, r2)},${m(g1, g2)},${m(b1, b2)})`;
+  }
+  function provColor(v, max) {
+    if (!v) return "#eef1ee";
+    const t = 0.18 + 0.82 * Math.sqrt(v / max);   // sqrt เพื่อให้จังหวัดเล็กยังเห็นสี
+    return lerpHex("#c8e6c9", "#1b5e20", t);
+  }
+  function originMap() {
+    const cfg = CMCAT.originProvinces;
+    if (!cfg || typeof NORTH_MAP === "undefined") return;
+    const data = cfg.data;
+    const north = Object.values(data).reduce((a, b) => a + b, 0);
+    const grand = north + (cfg.other || 0);
+    const max = Math.max(1, ...Object.values(data));
+    $("#mapSub").innerHTML = `${cfg.note} · ปีการศึกษา ${cfg.year} ` +
+      `<span class="muted-sm">(รวมภาคเหนือ ${fmt(north)} คน` +
+      (cfg.other ? ` · นอกภาคเหนือ ${fmt(cfg.other)} คน` : "") + `)</span>`;
+
+    // ---- SVG ----
+    const M = NORTH_MAP;
+    let s = `<svg viewBox="${M.viewBox}" class="north-map" role="img" aria-label="แผนที่ภาคเหนือ">`;
+    M.provinces.forEach(p => {
+      const v = data[p.name] || 0, pct = grand ? Math.round(v / grand * 100) : 0;
+      s += `<path d="${p.d}" class="prov" fill="${provColor(v, max)}" ` +
+        `data-name="${p.name}" data-v="${v}" data-pct="${pct}"></path>`;
+    });
+    M.provinces.forEach(p => {
+      const v = data[p.name] || 0;
+      s += `<text x="${p.c[0]}" y="${p.c[1] - 2}" class="prov-lb">${p.name}</text>`;
+      if (v) s += `<text x="${p.c[0]}" y="${p.c[1] + 12}" class="prov-ct">${fmt(v)}</text>`;
+    });
+    s += `</svg>`;
+    $("#originMapSvg").innerHTML = s;
+
+    // ---- legend ----
+    $("#mapLegend").innerHTML =
+      `<span class="lg-cap">น้อย</span>
+       <span class="lg-bar"></span>
+       <span class="lg-cap">มาก</span>
+       <span class="lg-zero"><i></i> ไม่มีข้อมูล</span>`;
+
+    // ---- ranked list ----
+    const ranked = Object.entries(data).sort((a, b) => b[1] - a[1]);
+    const rmax = ranked.length ? ranked[0][1] : 1;
+    $("#originList").innerHTML = `<h3>อันดับจังหวัดต้นทาง</h3>` +
+      ranked.map(([n, v]) => `
+        <div class="ori-row" data-name="${n}">
+          <span class="ori-n">${n}</span>
+          <span class="ori-track"><span class="ori-fill" style="width:${v / rmax * 100}%"></span></span>
+          <span class="ori-v">${fmt(v)} <b>(${Math.round(v / grand * 100)}%)</b></span>
+        </div>`).join("") +
+      (cfg.other ? `<div class="ori-row other"><span class="ori-n">นอกภาคเหนือตอนบน</span>
+        <span class="ori-track"><span class="ori-fill" style="width:${(cfg.other) / rmax * 100}%"></span></span>
+        <span class="ori-v">${fmt(cfg.other)} <b>(${Math.round(cfg.other / grand * 100)}%)</b></span></div>` : "") +
+      `<div class="ori-total">รวมทั้งหมด <b>${fmt(grand)}</b> คน</div>`;
+
+    // ---- interactivity: tooltip + เชื่อมแผนที่กับรายการ ----
+    const tip = $("#mapTip");
+    const showTip = (e, name, v, pct) => {
+      tip.hidden = false;
+      tip.innerHTML = `<b>${name}</b><br>${fmt(v)} คน · ${pct}% ของนักศึกษาใหม่`;
+      const pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+      let x = e.clientX + pad, y = e.clientY + pad;
+      if (x + w > innerWidth) x = e.clientX - w - pad;
+      if (y + h > innerHeight) y = e.clientY - h - pad;
+      tip.style.left = x + "px"; tip.style.top = y + "px";
+    };
+    const hideTip = () => { tip.hidden = true; };
+    const paths = $("#originMapSvg").querySelectorAll(".prov");
+    paths.forEach(el => {
+      const name = el.dataset.name, v = +el.dataset.v, pct = +el.dataset.pct;
+      const on = e => { el.classList.add("hot"); hi(name, true); showTip(e, name, v, pct); };
+      el.addEventListener("pointerenter", on);
+      el.addEventListener("pointermove", on);
+      el.addEventListener("pointerleave", () => { el.classList.remove("hot"); hi(name, false); hideTip(); });
+    });
+    function hi(name, on) {
+      const row = $("#originList").querySelector(`.ori-row[data-name="${CSS.escape(name)}"]`);
+      if (row) row.classList.toggle("hot", on);
+      const p = $("#originMapSvg").querySelector(`.prov[data-name="${CSS.escape(name)}"]`);
+      if (p) p.classList.toggle("hot", on);
+    }
+    $("#originList").querySelectorAll(".ori-row[data-name]").forEach(row => {
+      row.addEventListener("mouseenter", () => hi(row.dataset.name, true));
+      row.addEventListener("mouseleave", () => hi(row.dataset.name, false));
+    });
+  }
+
   /* ================= 2. จำนวนนักเรียน ================= */
   function enrollment() {
     Chart.line($("#enrollChart"), CMCAT.enrollment);
@@ -281,7 +374,7 @@
     $("#updated").textContent = "ข้อมูลล่าสุด: " + CMCAT.meta.updated;
     $("#sourceFoot").textContent = "แหล่งข้อมูล: " + CMCAT.meta.source;
     $("#yearFoot").textContent = new Date().getFullYear() + 543;
-    overview(); enrollment(); admission(); survey(); graduates(); staff(); analysis();
+    overview(); originMap(); enrollment(); admission(); survey(); graduates(); staff(); analysis();
     nav(); injectSectionTools();
   });
 })();

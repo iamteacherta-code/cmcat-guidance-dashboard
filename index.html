@@ -60,6 +60,16 @@
       <h2><span class="num-badge">1</span> ภาพรวมงานแนะแนว</h2>
       <div id="kpis" class="kpi-grid"></div>
       <p id="overviewNote" class="callout"></p>
+
+      <h3 class="map-title">🗺️ แผนที่ต้นทางนักศึกษาใหม่ — สถานศึกษาเดิมมาจากจังหวัดใดในภาคเหนือ</h3>
+      <p class="sub" id="mapSub"></p>
+      <div class="map-wrap">
+        <div class="card map-card">
+          <div id="originMapSvg"></div>
+          <div class="map-legend" id="mapLegend"></div>
+        </div>
+        <div class="card" id="originList"></div>
+      </div>
     </section>
 
     <!-- 2 จำนวนนักเรียน -->
@@ -136,7 +146,10 @@
     <p>© <span id="yearFoot"></span> งานแนะแนว วิทยาลัยเกษตรและเทคโนโลยีเชียงใหม่ · จัดทำเพื่อการประมวลผลและวางแผนภายใน</p>
   </footer>
 
+  <div id="mapTip" class="map-tip" hidden></div>
+
   <script src="assets/js/data.js"></script>
+  <script src="assets/js/northmap.js"></script>
   <script src="assets/js/charts.js"></script>
   <script src="assets/js/tools.js"></script>
   <script src="assets/js/app.js"></script>

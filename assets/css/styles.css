@@ -94,6 +94,38 @@ h3{font-size:1rem;margin:0 0 12px;color:var(--ink)}
 .grid-2 .wide{grid-column:1 / -1}
 @media(max-width:760px){.split,.grid-2{grid-template-columns:1fr}}
 
+/* ---------- แผนที่ภาคเหนือ ---------- */
+.map-title{font-size:1.05rem;color:var(--green-d);margin:22px 0 4px}
+.map-wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:16px;align-items:start}
+@media(max-width:820px){.map-wrap{grid-template-columns:1fr}}
+.map-card{display:flex;flex-direction:column}
+.north-map{width:100%;height:auto;max-height:560px;display:block}
+.north-map .prov{stroke:#fff;stroke-width:1.1;cursor:pointer;transition:fill .15s,stroke .12s}
+.north-map .prov:hover,.north-map .prov.hot{stroke:var(--green-d);stroke-width:2.4;filter:brightness(.94)}
+.prov-lb{font-size:11px;fill:#2a352e;text-anchor:middle;pointer-events:none;font-weight:600;
+  paint-order:stroke;stroke:#fff;stroke-width:2.4px;stroke-linejoin:round}
+.prov-ct{font-size:12px;fill:#0d3b13;text-anchor:middle;pointer-events:none;font-weight:800;
+  paint-order:stroke;stroke:#fff;stroke-width:2.6px;stroke-linejoin:round}
+.map-legend{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:.78rem;color:var(--muted);flex-wrap:wrap}
+.lg-bar{flex:0 0 130px;height:12px;border-radius:6px;
+  background:linear-gradient(90deg,#c8e6c9,#66bb6a,#1b5e20)}
+.lg-cap{font-weight:600}
+.lg-zero{display:inline-flex;align-items:center;gap:5px;margin-left:auto}
+.lg-zero i{width:12px;height:12px;border-radius:3px;background:#eef1ee;display:inline-block;border:1px solid var(--line)}
+.map-tip{position:fixed;z-index:60;background:var(--green-d);color:#fff;padding:8px 12px;
+  border-radius:9px;font-size:.82rem;line-height:1.35;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.28);max-width:220px}
+.ori-row{display:flex;align-items:center;gap:10px;padding:6px 4px;border-radius:8px;transition:.12s}
+.ori-row.hot{background:var(--green-bg)}
+.ori-n{width:96px;flex:none;font-size:.9rem;font-weight:600}
+.ori-track{flex:1;background:#f0f4f0;border-radius:6px;height:16px;overflow:hidden}
+.ori-fill{display:block;height:100%;border-radius:6px;background:var(--green-l)}
+.ori-row:first-of-type .ori-fill{background:var(--green)}
+.ori-v{width:96px;text-align:right;font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.ori-v b{color:var(--green-d)}
+.ori-row.other .ori-fill{background:#bdbdbd}
+.ori-total{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);text-align:right;font-size:.9rem}
+.ori-total b{color:var(--green-d);font-size:1.05rem}
+
 /* ---------- KPI ---------- */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:6px}
 @media(max-width:760px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
