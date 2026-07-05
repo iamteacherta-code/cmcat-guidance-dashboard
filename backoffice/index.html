@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ระบบหลังบ้าน (คลาวด์) · ทะเบียนนักเรียน & การดูแลนักศึกษา · งานแนะแนว วษท.เชียงใหม่</title>
+<link rel="icon" type="image/webp" href="../assets/img/logo.webp" />
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#2e7d32;--green-d:#1b5e20;--green-l:#66bb6a;--green-bg:#e8f5e9;
+  --ink:#1f2d24;--muted:#6a7a70;--line:#e2e8e2;--bg:#f4f7f3;--card:#fff;
+  --c1:#2e7d32;--c1bg:#e8f5e9;--c2:#f9a825;--c2bg:#fff8e1;
+  --c3:#ef6c00;--c3bg:#fff3e0;--c4:#c62828;--c4bg:#ffebee;
+  --shadow:0 2px 10px rgba(30,60,40,.08);--radius:14px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Sarabun","Leelawadee UI","Noto Sans Thai",Tahoma,sans-serif;line-height:1.5}
+button,input,select,textarea{font-family:inherit}
+h1,h2,h3,h4{margin:0}
+.hidden{display:none !important}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--green-d),var(--green));
+  display:grid;place-items:center;z-index:100;padding:20px}
+.gate-box{background:#fff;border-radius:20px;padding:34px 30px;max-width:400px;width:100%;
+  text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.gate-box img{width:78px;height:78px;border-radius:50%;object-fit:contain}
+.gate-box h1{font-size:1.15rem;margin:12px 0 4px;color:var(--green-d)}
+.gate-box p{color:var(--muted);font-size:.86rem;margin:0 0 18px}
+.gate-box input{width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:10px;
+  font-size:1rem;text-align:center;margin-bottom:12px}
+.gate-box input:focus{outline:none;border-color:var(--green)}
+.gate-note{font-size:.74rem;color:var(--muted);margin-top:14px;line-height:1.4}
+.gate-err{color:var(--c4);font-size:.85rem;min-height:1.2em;margin-bottom:8px}
+.cloud-badge{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:700;
+  background:#e3f2fd;color:#0277bd;padding:3px 10px;border-radius:20px;margin-bottom:10px}
+.top{background:linear-gradient(120deg,var(--green-d),var(--green));color:#fff;
+  padding:12px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:30}
+.top img{width:44px;height:44px;border-radius:50%;background:#fff;padding:2px;object-fit:contain;flex:none}
+.top h1{font-size:1rem;line-height:1.2}
+.top .sub{font-size:.76rem;opacity:.9}
+.top .spacer{flex:1}
+.top button{background:rgba(255,255,255,.16);color:#fff;border:none;padding:8px 14px;
+  border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600}
+.top button:hover{background:rgba(255,255,255,.28)}
+.sync{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;background:rgba(255,255,255,.16);
+  padding:6px 12px;border-radius:20px}
+.sync .led{width:9px;height:9px;border-radius:50%;background:#a5d6a7;box-shadow:0 0 0 0 rgba(165,214,167,.7);animation:pulse 2s infinite}
+.sync.off .led{background:#ef9a9a;animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(165,214,167,.6)}70%{box-shadow:0 0 0 7px rgba(165,214,167,0)}100%{box-shadow:0 0 0 0 rgba(165,214,167,0)}}
+.tabs{background:#fff;border-bottom:1px solid var(--line);display:flex;gap:2px;
+  padding:0 12px;position:sticky;top:68px;z-index:29;overflow-x:auto}
+.tabs button{background:none;border:none;padding:13px 18px;font-size:.92rem;font-weight:600;
+  color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button.active{color:var(--green-d);border-bottom-color:var(--green)}
+main{max-width:1100px;margin:0 auto;padding:20px 18px 60px}
+.view{display:none}.view.active{display:block}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.grow{flex:1;min-width:0}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.stat .n{font-size:1.9rem;font-weight:800;color:var(--green-d);line-height:1}
+.stat .l{font-size:.82rem;color:var(--muted);margin-top:4px}
+.stat.c1{border-top:4px solid var(--c1)}.stat.c2{border-top:4px solid var(--c2)}
+.stat.c3{border-top:4px solid var(--c3)}.stat.c4{border-top:4px solid var(--c4)}
+.stat.c1 .n{color:var(--c1)}.stat.c2 .n{color:#c9930a}
+.stat.c3 .n{color:var(--c3)}.stat.c4 .n{color:var(--c4)}
+.panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+.panel h3{font-size:1rem;margin-bottom:12px;color:var(--green-d)}
+.barline{display:flex;align-items:center;gap:10px;margin-bottom:7px;font-size:.88rem}
+.barline .lab{width:120px;flex:none;color:var(--ink)}
+.barline .track{flex:1;background:#f0f4f0;border-radius:6px;height:20px;overflow:hidden}
+.barline .fill{height:100%;border-radius:6px}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+input[type=text],input[type=search],input[type=tel],select,textarea{
+  padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:.9rem;background:#fff}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green-l)}
+.search{flex:1;min-width:180px}
+.btn{background:var(--green);color:#fff;border:none;padding:9px 16px;border-radius:9px;
+  cursor:pointer;font-size:.88rem;font-weight:600;white-space:nowrap}
+.btn:hover{background:var(--green-d)}
+.btn.sec{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.sec:hover{background:var(--green-bg)}
+.btn.danger{background:var(--c4)}.btn.danger:hover{background:#a01c1c}
+.btn.sm{padding:5px 10px;font-size:.8rem}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:#fff}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:#fafcfa;color:var(--muted);font-size:.8rem;font-weight:600;position:sticky;top:0}
+tbody tr:hover{background:var(--green-bg)}
+.empty{text-align:center;color:var(--muted);padding:40px 20px}
+.empty .big{font-size:2.4rem;margin-bottom:8px}
+.care{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;
+  font-size:.78rem;font-weight:700;white-space:nowrap}
+.care.l1{background:var(--c1bg);color:var(--c1)}.care.l2{background:var(--c2bg);color:#b8860b}
+.care.l3{background:var(--c3bg);color:var(--c3)}.care.l4{background:var(--c4bg);color:var(--c4)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.l1{background:var(--c1)}.dot.l2{background:var(--c2)}.dot.l3{background:var(--c3)}.dot.l4{background:var(--c4)}
+.tag{display:inline-block;background:var(--green-bg);color:var(--green-d);font-size:.72rem;
+  padding:2px 8px;border-radius:12px;margin:2px 2px 0 0}
+.link{color:var(--green-d);cursor:pointer;text-decoration:underline;font-weight:600}
+.modal-bg{position:fixed;inset:0;background:rgba(20,40,25,.5);z-index:50;display:none;padding:20px;overflow:auto}
+.modal-bg.show{display:grid;place-items:start center}
+.modal{background:#fff;border-radius:16px;max-width:640px;width:100%;margin:24px 0;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.modal-h{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+.modal-h h3{color:var(--green-d);font-size:1.05rem}
+.modal-h button{margin-left:auto;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted)}
+.modal-b{padding:20px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld.full{grid-column:1/-1}
+.fld label{font-size:.8rem;color:var(--muted);font-weight:600}
+.fld input,.fld select,.fld textarea{width:100%}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:20px;padding:5px 12px;font-size:.82rem;cursor:pointer;user-select:none}
+.chip.on{background:var(--green);color:#fff;border-color:var(--green)}
+.carepick{display:flex;gap:6px;flex-wrap:wrap}
+.carepick label{flex:1;min-width:100px;border:2px solid var(--line);border-radius:10px;padding:8px;text-align:center;cursor:pointer;font-size:.82rem;font-weight:600}
+.carepick input{display:none}
+.carepick label.on.l1{border-color:var(--c1);background:var(--c1bg);color:var(--c1)}
+.carepick label.on.l2{border-color:var(--c2);background:var(--c2bg);color:#b8860b}
+.carepick label.on.l3{border-color:var(--c3);background:var(--c3bg);color:var(--c3)}
+.carepick label.on.l4{border-color:var(--c4);background:var(--c4bg);color:var(--c4)}
+.modal-f{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end}
+.log-item{border-left:3px solid var(--green-l);padding:6px 12px;margin-bottom:8px;background:#fafcfa;border-radius:0 8px 8px 0}
+.log-item .d{font-size:.76rem;color:var(--muted)}
+.log-item .t{font-weight:600;font-size:.88rem}
+.note{background:var(--c2bg);border:1px solid var(--c2);border-radius:10px;padding:12px 14px;font-size:.84rem;margin-bottom:14px}
+.care-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.care-col{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.care-col .hd{padding:10px 14px;font-weight:700;color:#fff;display:flex;justify-content:space-between}
+.care-col.l1 .hd{background:var(--c1)}.care-col.l2 .hd{background:var(--c2)}
+.care-col.l3 .hd{background:var(--c3)}.care-col.l4 .hd{background:var(--c4)}
+.care-col .bd{padding:8px;max-height:420px;overflow:auto}
+.scard{border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:7px;cursor:pointer}
+.scard:hover{background:var(--green-bg)}
+.scard .nm{font-weight:600;font-size:.88rem}
+.scard .mt{font-size:.76rem;color:var(--muted)}
+.loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:90}
+.spinner{width:44px;height:44px;border:4px solid var(--green-bg);border-top-color:var(--green);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}.top h1{font-size:.9rem}}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading"><div style="text-align:center"><div class="spinner"></div>
+  <p style="color:var(--muted);margin-top:14px;font-size:.9rem">กำลังเชื่อมต่อคลาวด์…</p></div></div>
+
+<!-- ===== ประตูรหัสผ่าน ===== -->
+<div class="gate hidden" id="gate">
+  <div class="gate-box">
+    <img src="../assets/img/logo.webp" alt="โลโก้" onerror="this.style.display='none'"/>
+    <div><span class="cloud-badge">☁️ ระบบคลาวด์ · ใช้ร่วมกันหลายคน</span></div>
+    <h1>ระบบหลังบ้านงานแนะแนว</h1>
+    <p>ทะเบียนนักเรียน & ระดับการดูแลนักศึกษา</p>
+    <div class="gate-err" id="gateErr"></div>
+    <input type="password" id="gatePass" placeholder="กรอกรหัสผ่านของทีม" autocomplete="current-password" />
+    <button class="btn" style="width:100%" id="gateBtn">เข้าสู่ระบบ</button>
+    <div class="gate-note">🔒 ใช้รหัสผ่านร่วมของทีมงานแนะแนว · ข้อมูลเก็บบนคลาวด์ Google (Firebase)
+      มีระบบล็อกอินป้องกัน เข้าได้จากทุกเครื่องผ่านลิงค์นี้</div>
+  </div>
+</div>
+
+<!-- ===== แอปหลัก ===== -->
+<div id="app" class="hidden">
+  <div class="top">
+    <img src="../assets/img/logo.webp" alt="โลโก้" onerror="this.style.display='none'"/>
+    <div>
+      <h1>ระบบหลังบ้าน · งานแนะแนว วษท.เชียงใหม่</h1>
+      <div class="sub">ทะเบียนนักเรียน & การดูแลนักศึกษา — ระบบคลาวด์ ใช้ร่วมกันหลายคน</div>
+    </div>
+    <div class="spacer"></div>
+    <span class="sync" id="sync"><span class="led"></span><span id="syncText">เชื่อมต่อแล้ว</span></span>
+    <button id="btnLogout">ออกจากระบบ</button>
+  </div>
+
+  <div class="tabs">
+    <button class="active" data-tab="dash">📊 ภาพรวม</button>
+    <button data-tab="reg">📋 ทะเบียนนักเรียน</button>
+    <button data-tab="care">❤️ ระดับการดูแล</button>
+    <button data-tab="data">💾 นำเข้า/สำรอง</button>
+  </div>
+
+  <main>
+    <section class="view active" id="view-dash"></section>
+    <section class="view" id="view-reg">
+      <div class="ctrl">
+        <input type="search" class="search" id="regSearch" placeholder="🔍 ค้นหา ชื่อ / รหัส / สาขา"/>
+        <select id="regLevel"><option value="">ทุกระดับชั้น</option></select>
+        <select id="regCare">
+          <option value="">ทุกระดับการดูแล</option>
+          <option value="1">1 ปกติ</option><option value="2">2 เฝ้าระวัง</option>
+          <option value="3">3 ดูแลใกล้ชิด</option><option value="4">4 เร่งด่วน</option>
+        </select>
+        <button class="btn" id="btnAdd">+ เพิ่มนักเรียน</button>
+      </div>
+      <div id="regTable"></div>
+    </section>
+    <section class="view" id="view-care">
+      <div class="note">❤️ <b>ระดับการดูแลและแนะนำนักศึกษา</b> — จัดกลุ่มนักเรียนตามระดับการดูแล
+        เพื่อวางแผนช่วยเหลือ คลิกที่ชื่อเพื่อบันทึกการให้คำปรึกษา/แก้ไขระดับ</div>
+      <div class="care-cols" id="careCols"></div>
+    </section>
+    <section class="view" id="view-data">
+      <div class="panel">
+        <h3>💾 สำรอง & ส่งออกข้อมูล</h3>
+        <p style="font-size:.86rem;color:var(--muted);margin-top:0">ข้อมูลถูกเก็บอัตโนมัติบนคลาวด์แล้ว
+          แต่แนะนำให้ส่งออกไฟล์สำรองเก็บไว้เป็นระยะ</p>
+        <div class="row">
+          <button class="btn" id="btnExpJson">⬇️ ส่งออกไฟล์สำรอง (JSON)</button>
+          <button class="btn sec" id="btnExpCsv">⬇️ ส่งออกทะเบียน (Excel/CSV)</button>
+          <button class="btn sec" id="btnImp">⬆️ นำเข้า/ย้ายข้อมูลขึ้นคลาวด์</button>
+          <input type="file" id="impFile" accept=".json" hidden/>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>👥 การใช้งานร่วมกัน</h3>
+        <p style="font-size:.86rem;color:var(--muted);margin:0 0 8px">ส่งลิงค์นี้ให้ทีมงานแนะแนวเข้าใช้จากเครื่องใดก็ได้
+          (ใช้รหัสผ่านร่วมกัน) — ทุกคนแก้ไขพร้อมกันและเห็นการเปลี่ยนแปลงแบบเรียลไทม์</p>
+        <div class="row"><input type="text" id="shareUrl" class="grow" readonly/>
+          <button class="btn sec" id="btnCopy">📋 คัดลอกลิงค์</button></div>
+        <p style="font-size:.78rem;color:var(--muted);margin-top:10px">🔑 เปลี่ยนรหัสผ่านร่วมได้ที่ Firebase Console →
+          Authentication → ผู้ใช้ guidance@cmcat.app → Reset password</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ===== Modal ===== -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-h"><h3 id="mTitle">เพิ่มนักเรียน</h3><button id="mClose">×</button></div>
+    <div class="modal-b">
+      <div class="form-grid">
+        <div class="fld"><label>รหัสนักศึกษา</label><input type="text" id="fCode"/></div>
+        <div class="fld"><label>ระดับชั้น</label><select id="fLevel"></select></div>
+        <div class="fld"><label>คำนำหน้า</label>
+          <select id="fPrefix"><option>นาย</option><option>นางสาว</option><option>เด็กชาย</option><option>เด็กหญิง</option></select></div>
+        <div class="fld"><label>กลุ่ม/ห้อง</label><input type="text" id="fRoom" placeholder="เช่น 1"/></div>
+        <div class="fld"><label>ชื่อ</label><input type="text" id="fFirst"/></div>
+        <div class="fld"><label>นามสกุล</label><input type="text" id="fLast"/></div>
+        <div class="fld full"><label>สาขาวิชา</label><select id="fMajor"></select></div>
+        <div class="fld"><label>เบอร์โทรนักเรียน</label><input type="tel" id="fPhone"/></div>
+        <div class="fld"><label>เบอร์ผู้ปกครอง</label><input type="tel" id="fGphone"/></div>
+        <div class="fld full"><label>ระดับการดูแล</label>
+          <div class="carepick" id="fCare">
+            <label class="l1"><input type="radio" name="care" value="1"/><span>1 ปกติ</span></label>
+            <label class="l2"><input type="radio" name="care" value="2"/><span>2 เฝ้าระวัง</span></label>
+            <label class="l3"><input type="radio" name="care" value="3"/><span>3 ดูแลใกล้ชิด</span></label>
+            <label class="l4"><input type="radio" name="care" value="4"/><span>4 เร่งด่วน</span></label>
+          </div>
+        </div>
+        <div class="fld full"><label>ด้านที่ต้องดูแล (เลือกได้หลายข้อ)</label><div class="chips" id="fTags"></div></div>
+        <div class="fld full"><label>บันทึกเพิ่มเติม</label><textarea id="fNote" rows="2"></textarea></div>
+      </div>
+      <div style="margin-top:18px">
+        <h4 style="font-size:.9rem;color:var(--green-d);margin-bottom:8px">📝 บันทึกการให้คำปรึกษา/ติดตาม</h4>
+        <div id="logList"></div>
+        <div class="row" style="margin-top:8px">
+          <input type="text" id="logTopic" class="grow" placeholder="หัวข้อ/เรื่องที่ให้คำปรึกษา"/>
+          <button class="btn sm" id="btnAddLog">+ เพิ่มบันทึก</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn danger sm" id="mDelete">ลบ</button>
+      <button class="btn sec" id="mCancel">ยกเลิก</button>
+      <button class="btn" id="mSave">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence }
+  from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc }
+  from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBsXC2CMoj-SBqydxOxjIg2MllLEFilsDg",
+  authDomain: "cmcat-guidance.firebaseapp.com",
+  projectId: "cmcat-guidance",
+  storageBucket: "cmcat-guidance.firebasestorage.app",
+  messagingSenderId: "890130087145",
+  appId: "1:890130087145:web:ad436b2f915a436e92c478"
+};
+const SHARED_EMAIL = "guidance@cmcat.app";
+const fb = initializeApp(firebaseConfig);
+const auth = getAuth(fb);
+const db = getFirestore(fb);
+
+/* ---------- ข้อมูลอ้างอิง ---------- */
+const LEVELS = ["ปวช.1","ปวช.2","ปวช.3","ปวส.1","ปวส.2"];
+const MAJORS = ["เกษตรศาสตร์","พืชศาสตร์","สัตวศาสตร์","ช่างกลเกษตร","เทคโนโลยีการผลิตพืช",
+  "เทคโนโลยีการผลิตสัตว์","เทคโนโลยีและนวัตกรรมการเกษตร","เทคโนโลยีการจัดการธุรกิจเกษตร",
+  "เพาะเลี้ยงสัตว์น้ำ","อุตสาหกรรมเกษตร","อื่น ๆ"];
+const CARE = {1:"ปกติ",2:"เฝ้าระวัง",3:"ดูแลใกล้ชิด",4:"ช่วยเหลือเร่งด่วน"};
+const TAGS = ["การเรียน","พฤติกรรม","เศรษฐกิจ/ทุน","สุขภาพ/จิตใจ","ครอบครัว","เสี่ยงออกกลางคัน","ชู้สาว","ยาเสพติด"];
+
+let DB = { students: [] };
+let unsub = null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const todayTH = () => { const d=new Date(); return (d.getFullYear()+543)+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+
+/* ================= AUTH ================= */
+const Gate = {
+  submit(){
+    const err=$("gateErr"), pass=$("gatePass").value;
+    if(!pass){err.textContent="กรุณากรอกรหัสผ่าน";return;}
+    $("gateBtn").textContent="กำลังเข้าสู่ระบบ…"; $("gateBtn").disabled=true; err.textContent="";
+    signInWithEmailAndPassword(auth, SHARED_EMAIL, pass)
+      .catch(e=>{
+        err.textContent = (e.code==="auth/invalid-credential"||e.code==="auth/wrong-password")
+          ? "รหัสผ่านไม่ถูกต้อง" : ("เข้าระบบไม่สำเร็จ: "+e.code);
+        $("gatePass").value="";
+      })
+      .finally(()=>{$("gateBtn").textContent="เข้าสู่ระบบ";$("gateBtn").disabled=false;});
+  },
+  logout(){ if(unsub)unsub(); signOut(auth); }
+};
+
+setPersistence(auth, browserLocalPersistence).finally(()=>{
+  onAuthStateChanged(auth, user=>{
+    $("loading").classList.add("hidden");
+    if(user){ $("gate").classList.add("hidden"); $("app").classList.remove("hidden"); App.start(); subscribe(); }
+    else { if(unsub){unsub();unsub=null;} $("app").classList.add("hidden"); $("gate").classList.remove("hidden"); $("gatePass").focus(); }
+  });
+});
+
+function subscribe(){
+  setSync(true,"กำลังซิงก์…");
+  unsub = onSnapshot(collection(db,"students"), snap=>{
+    DB.students = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    setSync(true, snap.metadata.fromCache ? "ออฟไลน์ (แคช)" : "เชื่อมต่อแล้ว");
+    App.refresh();
+  }, err=>{ setSync(false,"ขาดการเชื่อมต่อ"); console.error(err); });
+}
+function setSync(ok,text){ const s=$("sync"); s.classList.toggle("off",!ok); $("syncText").textContent=text; }
+
+/* ================= APP / TABS ================= */
+const App = {
+  cur:"dash",
+  start(){
+    const opt=a=>a.map(v=>`<option>${esc(v)}</option>`).join("");
+    $("fLevel").innerHTML=opt(LEVELS); $("fMajor").innerHTML=opt(MAJORS);
+    $("regLevel").innerHTML='<option value="">ทุกระดับชั้น</option>'+opt(LEVELS);
+    $("fTags").innerHTML=TAGS.map(t=>`<span class="chip" data-tag="${esc(t)}">${esc(t)}</span>`).join("");
+    $("fTags").querySelectorAll(".chip").forEach(c=>c.onclick=()=>c.classList.toggle("on"));
+    document.querySelectorAll("#fCare input").forEach(r=>r.addEventListener("change",()=>{
+      document.querySelectorAll("#fCare label").forEach(l=>l.classList.remove("on"));
+      if(r.checked)r.closest("label").classList.add("on");
+    }));
+    $("shareUrl").value=location.href.split("?")[0];
+    this.tab("dash");
+  },
+  tab(t){ this.cur=t;
+    document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab===t));
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    $("view-"+t).classList.add("active"); this.refresh();
+  },
+  refresh(){ if($("app").classList.contains("hidden"))return;
+    if(this.cur==="dash")Dash.render(); if(this.cur==="reg")Reg.render(); if(this.cur==="care")Care.render(); }
+};
+
+/* ================= DASHBOARD ================= */
+const Dash = { render(){
+  const S=DB.students,n=S.length;
+  const cnt=[1,2,3,4].map(l=>S.filter(s=>+s.care===l).length);
+  const urgent=S.filter(s=>+s.care>=3).sort((a,b)=>b.care-a.care);
+  const byLevel=LEVELS.map(L=>({L,n:S.filter(s=>s.level===L).length}));
+  const maxL=Math.max(1,...byLevel.map(x=>x.n));
+  $("view-dash").innerHTML=`
+    <div class="stat-grid">
+      <div class="stat"><div class="n">${n}</div><div class="l">นักเรียนในทะเบียนทั้งหมด</div></div>
+      <div class="stat c1"><div class="n">${cnt[0]}</div><div class="l">ระดับ 1 ปกติ</div></div>
+      <div class="stat c2"><div class="n">${cnt[1]}</div><div class="l">ระดับ 2 เฝ้าระวัง</div></div>
+      <div class="stat c3"><div class="n">${cnt[2]}</div><div class="l">ระดับ 3 ดูแลใกล้ชิด</div></div>
+      <div class="stat c4"><div class="n">${cnt[3]}</div><div class="l">ระดับ 4 เร่งด่วน</div></div>
+    </div>
+    <div class="panel"><h3>จำนวนนักเรียนแยกตามระดับชั้น</h3>
+      ${byLevel.map(x=>`<div class="barline"><span class="lab">${x.L}</span>
+        <span class="track"><span class="fill" style="width:${x.n/maxL*100}%;background:var(--green)"></span></span>
+        <span style="width:44px;text-align:right;font-weight:600">${x.n}</span></div>`).join("")}</div>
+    <div class="panel"><h3>🚨 นักเรียนที่ต้องดูแลเป็นพิเศษ (ระดับ 3–4)</h3>
+      ${urgent.length?`<div class="tbl-wrap"><table><thead><tr><th>ระดับ</th><th>ชื่อ-สกุล</th><th>ระดับชั้น</th><th>สาขา</th><th></th></tr></thead>
+      <tbody>${urgent.map(s=>`<tr>
+        <td><span class="care l${s.care}"><span class="dot l${s.care}"></span>${s.care} ${CARE[s.care]}</span></td>
+        <td>${esc(s.prefix||"")}${esc(s.first)} ${esc(s.last)}</td><td>${esc(s.level||"")}</td><td>${esc(s.major||"")}</td>
+        <td><span class="link" data-open="${s.id}">เปิด</span></td></tr>`).join("")}</tbody></table></div>`
+      :`<div class="empty"><div class="big">✅</div>ยังไม่มีนักเรียนที่ต้องดูแลเป็นพิเศษ</div>`}</div>`;
+  bindOpens($("view-dash"));
+}};
+
+/* ================= REGISTRY ================= */
+const Reg = { render(){
+  const q=($("regSearch").value||"").trim().toLowerCase(), fl=$("regLevel").value, fc=$("regCare").value;
+  const list=DB.students.filter(s=>{
+    if(fl&&s.level!==fl)return false; if(fc&&+s.care!==+fc)return false;
+    if(q){const h=((s.code||"")+" "+(s.first||"")+" "+(s.last||"")+" "+(s.major||"")+" "+(s.level||"")).toLowerCase(); if(!h.includes(q))return false;}
+    return true;
+  }).sort((a,b)=>(a.level||"").localeCompare(b.level||"","th")||(a.first||"").localeCompare(b.first||"","th"));
+  const box=$("regTable");
+  if(!DB.students.length){box.innerHTML=`<div class="tbl-wrap"><div class="empty"><div class="big">📋</div>
+    ยังไม่มีข้อมูลนักเรียน<br><br><button class="btn" id="btnAdd2">+ เพิ่มนักเรียนคนแรก</button></div></div>`;
+    $("btnAdd2").onclick=()=>Student.open();return;}
+  box.innerHTML=`<div style="font-size:.82rem;color:var(--muted);margin-bottom:8px">พบ ${list.length} คน</div>
+    <div class="tbl-wrap"><table><thead><tr><th>รหัส</th><th>ชื่อ-สกุล</th><th>ระดับชั้น</th><th>สาขา</th><th>การดูแล</th><th>เบอร์โทร</th><th></th></tr></thead>
+    <tbody>${list.map(s=>`<tr>
+      <td>${esc(s.code||"-")}</td><td><b>${esc(s.prefix||"")}${esc(s.first)} ${esc(s.last)}</b></td>
+      <td>${esc(s.level||"-")}${s.room?" /"+esc(s.room):""}</td><td>${esc(s.major||"-")}</td>
+      <td><span class="care l${s.care||1}"><span class="dot l${s.care||1}"></span>${s.care||1} ${CARE[s.care||1]}</span></td>
+      <td>${esc(s.phone||"-")}</td><td><span class="link" data-open="${s.id}">แก้ไข</span></td></tr>`).join("")}</tbody></table></div>`;
+  bindOpens(box);
+}};
+
+/* ================= CARE ================= */
+const Care = { render(){
+  $("careCols").innerHTML=[1,2,3,4].map(l=>{
+    const list=DB.students.filter(s=>+(s.care||1)===l);
+    return `<div class="care-col l${l}"><div class="hd"><span>${l} · ${CARE[l]}</span><span>${list.length}</span></div>
+      <div class="bd">${list.length?list.map(s=>`<div class="scard" data-open="${s.id}">
+        <div class="nm">${esc(s.prefix||"")}${esc(s.first)} ${esc(s.last)}</div>
+        <div class="mt">${esc(s.level||"")} · ${esc(s.major||"")}</div>
+        ${(s.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`).join("")
+        :'<div style="font-size:.8rem;color:var(--muted);padding:10px;text-align:center">—</div>'}</div></div>`;
+  }).join("");
+  bindOpens($("careCols"));
+}};
+function bindOpens(scope){ scope.querySelectorAll("[data-open]").forEach(el=>el.onclick=()=>Student.open(el.dataset.open)); }
+
+/* ================= STUDENT MODAL ================= */
+const Student = {
+  cur:null, logs:[],
+  open(id){
+    const s=id?DB.students.find(x=>x.id===id):null;
+    this.cur=s; this.logs=s?JSON.parse(JSON.stringify(s.logs||[])):[];
+    $("mTitle").textContent=s?"แก้ไขข้อมูลนักเรียน":"เพิ่มนักเรียน";
+    $("mDelete").style.display=s?"":"none";
+    const g=(id,v)=>$(id).value=v||"";
+    g("fCode",s&&s.code);g("fFirst",s&&s.first);g("fLast",s&&s.last);g("fRoom",s&&s.room);
+    g("fPhone",s&&s.phone);g("fGphone",s&&s.gphone);g("fNote",s&&s.note);
+    $("fLevel").value=(s&&s.level)||LEVELS[0]; $("fMajor").value=(s&&s.major)||MAJORS[0]; $("fPrefix").value=(s&&s.prefix)||"นาย";
+    const care=(s&&s.care)||1;
+    document.querySelectorAll("#fCare label").forEach(l=>l.classList.remove("on"));
+    const cr=document.querySelector(`#fCare input[value="${care}"]`); if(cr){cr.checked=true;cr.closest("label").classList.add("on");}
+    const tags=(s&&s.tags)||[];
+    $("fTags").querySelectorAll(".chip").forEach(c=>c.classList.toggle("on",tags.includes(c.dataset.tag)));
+    this.renderLogs(); $("modal").classList.add("show");
+  },
+  close(){ $("modal").classList.remove("show"); },
+  renderLogs(){ const box=$("logList");
+    box.innerHTML=this.logs.length?this.logs.slice().reverse().map((l,i)=>`<div class="log-item">
+      <div class="d">${esc(l.date)}</div><div class="t">${esc(l.topic)}</div>
+      <span class="link" style="font-size:.76rem" data-dellog="${this.logs.length-1-i}">ลบ</span></div>`).join("")
+      :'<div style="font-size:.82rem;color:var(--muted)">ยังไม่มีบันทึก</div>';
+    box.querySelectorAll("[data-dellog]").forEach(el=>el.onclick=()=>{this.logs.splice(+el.dataset.dellog,1);this.renderLogs();});
+  },
+  addLog(){ const t=$("logTopic").value.trim(); if(!t)return; this.logs.push({date:todayTH(),topic:t}); $("logTopic").value=""; this.renderLogs(); },
+  async save(){
+    const first=$("fFirst").value.trim(); if(!first){alert("กรุณากรอกชื่อ");return;}
+    const tags=[...$("fTags").querySelectorAll(".chip.on")].map(c=>c.dataset.tag);
+    const care=+((document.querySelector("#fCare input:checked")||{}).value||1);
+    const id=this.cur?this.cur.id:doc(collection(db,"students")).id;
+    const rec={ code:$("fCode").value.trim(), prefix:$("fPrefix").value, first, last:$("fLast").value.trim(),
+      level:$("fLevel").value, major:$("fMajor").value, room:$("fRoom").value.trim(),
+      phone:$("fPhone").value.trim(), gphone:$("fGphone").value.trim(),
+      care, tags, note:$("fNote").value.trim(), logs:this.logs, updatedAt:todayTH() };
+    $("mSave").disabled=true; $("mSave").textContent="กำลังบันทึก…";
+    try{ await setDoc(doc(db,"students",id), rec); this.close(); }
+    catch(e){ alert("บันทึกไม่สำเร็จ: "+e.message); }
+    finally{ $("mSave").disabled=false; $("mSave").textContent="บันทึก"; }
+  },
+  async remove(){
+    if(!this.cur)return; if(!confirm(`ลบข้อมูล "${this.cur.first} ${this.cur.last}" ?`))return;
+    try{ await deleteDoc(doc(db,"students",this.cur.id)); this.close(); }
+    catch(e){ alert("ลบไม่สำเร็จ: "+e.message); }
+  }
+};
+
+/* ================= DATA (backup) ================= */
+const Data = {
+  dl(name,text,type){const b=new Blob(["﻿"+text],{type});const a=document.createElement("a");
+    a.href=URL.createObjectURL(b);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),100);},
+  exportJSON(){ this.dl(`cmcat-สำรองทะเบียน-${todayTH()}.json`, JSON.stringify({students:DB.students},null,2), "application/json;charset=utf-8"); },
+  exportCSV(){
+    const h=["รหัส","คำนำหน้า","ชื่อ","นามสกุล","ระดับชั้น","กลุ่ม","สาขา","เบอร์นักเรียน","เบอร์ผู้ปกครอง","ระดับการดูแล","ด้านที่ดูแล","บันทึกล่าสุด"];
+    const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
+    const rows=DB.students.map(s=>[s.code,s.prefix,s.first,s.last,s.level,s.room,s.major,s.phone,s.gphone,
+      (s.care||1)+" "+CARE[s.care||1],(s.tags||[]).join(" / "),(s.logs&&s.logs.length?s.logs[s.logs.length-1].date+" "+s.logs[s.logs.length-1].topic:"")]);
+    this.dl(`cmcat-ทะเบียนนักเรียน-${todayTH()}.csv`,[h,...rows].map(r=>r.map(q).join(",")).join("\r\n"),"text/csv;charset=utf-8");
+  },
+  async importJSON(file){
+    const text=await file.text(); let d;
+    try{ d=JSON.parse(text); }catch(e){ alert("ไฟล์ไม่ถูกต้อง"); return; }
+    const arr=d.students||d; if(!Array.isArray(arr)){alert("ไฟล์ไม่ใช่ไฟล์สำรองทะเบียน");return;}
+    if(!confirm(`นำเข้า/อัปโหลด ${arr.length} รายชื่อขึ้นคลาวด์? (ข้อมูลเดิมที่มี id ซ้ำจะถูกทับ)`))return;
+    let ok=0;
+    for(const s of arr){ const id=s.id||doc(collection(db,"students")).id; const {id:_,...rec}=s;
+      try{ await setDoc(doc(db,"students",id),rec); ok++; }catch(e){ console.error(e); } }
+    alert(`อัปโหลดสำเร็จ ${ok}/${arr.length} รายชื่อ`);
+  }
+};
+
+/* ================= EVENT WIRING ================= */
+$("gateBtn").onclick=()=>Gate.submit();
+$("gatePass").addEventListener("keydown",e=>{if(e.key==="Enter")Gate.submit();});
+$("btnLogout").onclick=()=>Gate.logout();
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>App.tab(b.dataset.tab));
+$("regSearch").oninput=()=>Reg.render(); $("regLevel").onchange=()=>Reg.render(); $("regCare").onchange=()=>Reg.render();
+$("btnAdd").onclick=()=>Student.open();
+$("mClose").onclick=()=>Student.close(); $("mCancel").onclick=()=>Student.close();
+$("mSave").onclick=()=>Student.save(); $("mDelete").onclick=()=>Student.remove();
+$("btnAddLog").onclick=()=>Student.addLog();
+$("btnExpJson").onclick=()=>Data.exportJSON(); $("btnExpCsv").onclick=()=>Data.exportCSV();
+$("btnImp").onclick=()=>$("impFile").click();
+$("impFile").onchange=function(){ if(this.files[0])Data.importJSON(this.files[0]); this.value=""; };
+$("btnCopy").onclick=()=>{ navigator.clipboard.writeText($("shareUrl").value).then(()=>{$("btnCopy").textContent="✓ คัดลอกแล้ว";setTimeout(()=>$("btnCopy").textContent="📋 คัดลอกลิงค์",1500);}); };
+</script>
+</body>
+</html>
