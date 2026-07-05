@@ -93,6 +93,9 @@
     sel.innerHTML = years.map(y => `<option value="${y}">ปี ${y}</option>`).join("");
     sel.value = _mapYear;
     sel.onchange = () => { _mapYear = sel.value; _selProv = null; draw(); };
+    // ซ่อนช่องเลือกปีเมื่อมีข้อมูลเพียงปีเดียว
+    const yp = sel.closest(".year-pick");
+    if (yp) yp.style.display = years.length > 1 ? "" : "none";
     draw();
 
     function yearData() { return cfg.years[_mapYear] || {}; }
