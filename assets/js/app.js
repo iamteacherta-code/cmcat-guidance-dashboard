@@ -12,17 +12,21 @@
   /* ---------- helper คำนวณ ---------- */
   const sum = a => a.reduce((x, y) => x + y, 0);
 
-  // การรับสมัคร: รวมยอดต่าง ๆ
-  const adm = CMCAT.admission2569;
+  // การรับสมัคร: รวมยอดต่าง ๆ (คำนวณใหม่ทุกครั้งที่ข้อมูลเปลี่ยน)
   const roundTotal = r => r.pvc.direct + r.pvc.online + r.pvs.direct + r.pvs.online;
-  const applied = {
-    pvc: sum(adm.rounds.map(r => r.pvc.direct + r.pvc.online)),
-    pvs: sum(adm.rounds.map(r => r.pvs.direct + r.pvs.online)),
-    direct: sum(adm.rounds.map(r => r.pvc.direct + r.pvs.direct)),
-    online: sum(adm.rounds.map(r => r.pvc.online + r.pvs.online))
-  };
-  applied.all = applied.pvc + applied.pvs;
-  const reportedTotal = adm.reported.pvc + adm.reported.pvs;
+  let adm, applied, reportedTotal, gradYears;
+  function computeDerived() {
+    adm = CMCAT.admission2569;
+    applied = {
+      pvc: sum(adm.rounds.map(r => r.pvc.direct + r.pvc.online)),
+      pvs: sum(adm.rounds.map(r => r.pvs.direct + r.pvs.online)),
+      direct: sum(adm.rounds.map(r => r.pvc.direct + r.pvs.direct)),
+      online: sum(adm.rounds.map(r => r.pvc.online + r.pvs.online))
+    };
+    applied.all = applied.pvc + applied.pvs;
+    reportedTotal = adm.reported.pvc + adm.reported.pvs;
+    gradYears = Object.keys(CMCAT.graduates).map(Number).sort();
+  }
 
   // ผู้จบ: สรุปยอดรวมต่อปี
   function gradTotals(year) {
@@ -34,7 +38,6 @@
     });
     return t;
   }
-  const gradYears = Object.keys(CMCAT.graduates).map(Number).sort();
 
   /* ================= 1. ภาพรวม ================= */
   function overview() {
@@ -344,9 +347,8 @@
     Chart.donut($("#svInfluence"), sv.influence);
     Chart.hbar($("#svReason"), sv.reason, { labelW: 250, color: "#2e7d32" });
 
-    const topCh = sv.channel[0], topReason = sv.reason[0];
-    const selfPct = Math.round(sv.influence[0].value / sv.total * 100);
-    const wordOfMouth = sv.channel[0].value + sv.channel[4].value; // เพื่อน + ครูแนะแนวเข้าไปในรร.
+    const topCh = sv.channel[0] || { label: "-" }, topReason = sv.reason[0] || { label: "-" };
+    const selfPct = sv.total ? Math.round((sv.influence[0] ? sv.influence[0].value : 0) / sv.total * 100) : 0;
     $("#svNote").innerHTML = `
       <strong>อ่านผล:</strong> นักศึกษาส่วนใหญ่ <b>ตัดสินใจด้วยตนเอง (${selfPct}%)</b>
       รับรู้ข่าวจาก <b>${topCh.label}</b> มากที่สุด และช่องทางแบบ “บอกต่อ + ครูเข้าไปแนะแนวถึงโรงเรียน”
@@ -483,17 +485,32 @@
     });
   }
 
+  /* ---------- เรนเดอร์ทุกส่วน (เรียกซ้ำได้เมื่อข้อมูลเปลี่ยน) ---------- */
+  function renderAll() {
+    computeDerived();
+    $("#collegeName").textContent = CMCAT.meta.college;
+    $("#deptName").textContent = CMCAT.meta.department;
+    $("#updated").textContent = "ข้อมูลล่าสุด: " + CMCAT.meta.updated;
+    $("#sourceFoot").textContent = "แหล่งข้อมูล: " + CMCAT.meta.source;
+    overview(); originMap(); enrollment(); admission(); survey(); graduates(); staff(); analysis();
+  }
+
   /* ================= init ================= */
   document.addEventListener("DOMContentLoaded", () => {
     if (typeof Tools !== "undefined" && Tools.hasOverride()) {
       const b = $("#overrideBanner"); if (b) b.hidden = false;
     }
-    $("#collegeName").textContent = CMCAT.meta.college;
-    $("#deptName").textContent = CMCAT.meta.department;
-    $("#updated").textContent = "ข้อมูลล่าสุด: " + CMCAT.meta.updated;
-    $("#sourceFoot").textContent = "แหล่งข้อมูล: " + CMCAT.meta.source;
     $("#yearFoot").textContent = new Date().getFullYear() + 543;
-    overview(); originMap(); enrollment(); admission(); survey(); graduates(); staff(); analysis();
+    renderAll();
     nav(); injectSectionTools();
   });
+
+  /* ---------- รับข้อมูลสดจากคลาวด์ (เรียกโดยตัวโหลด Firebase) ---------- */
+  window.__setDashboardData = (cloud) => {
+    if (!cloud || typeof cloud !== "object") return;
+    Object.keys(cloud).forEach(k => { CMCAT[k] = cloud[k]; });
+    try { renderAll(); } catch (e) { console.error("render error", e); }
+    const c = document.getElementById("cloudBadge"); if (c) c.hidden = false;
+  };
+  window.__renderDashboard = renderAll;
 })();

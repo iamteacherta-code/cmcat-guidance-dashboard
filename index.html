@@ -20,7 +20,10 @@
         <p id="deptName" class="dept"></p>
       </div>
     </div>
-    <div class="updated" id="updated"></div>
+    <div class="head-right">
+      <span id="cloudBadge" class="cloud-live" hidden>☁️ ข้อมูลสดจากคลาวด์</span>
+      <div class="updated" id="updated"></div>
+    </div>
   </header>
 
   <nav class="nav">
@@ -45,7 +48,10 @@
              onchange="if(this.files[0])Tools.importJSON(this.files[0])" />
       <button onclick="Tools.exportDataJS()" class="tbtn" title="ดาวน์โหลดไฟล์ data.js เพื่อนำไปเผยแพร่บนลิงค์สาธารณะ">⬇️ ไฟล์เผยแพร่</button>
     </div>
-    <a class="tbtn tbtn-ghost" href="backoffice/" target="_blank" rel="noopener" title="ระบบทะเบียนนักเรียน + ระดับการดูแล (คลาวด์ · ต้องล็อกอิน)">🔒 ระบบหลังบ้าน</a>
+    <span class="tbtn-group" style="margin-left:auto">
+      <a class="tbtn" href="admin/" target="_blank" rel="noopener" title="แก้ไขตัวเลข/แผนที่ผ่านเว็บ อัปเดตสด (ต้องล็อกอิน)">✏️ แก้ไขข้อมูล</a>
+      <a class="tbtn tbtn-ghost" href="backoffice/" target="_blank" rel="noopener" title="ระบบทะเบียนนักเรียน + ระดับการดูแล (คลาวด์ · ต้องล็อกอิน)" style="margin-left:0">🔒 ระบบหลังบ้าน</a>
+    </span>
   </div>
 
   <div id="overrideBanner" class="override-banner" hidden>
@@ -157,5 +163,31 @@
   <script src="assets/js/charts.js"></script>
   <script src="assets/js/tools.js"></script>
   <script src="assets/js/app.js"></script>
+
+  <!-- ดึงข้อมูลสดจากคลาวด์ (Firebase) — อ่านอย่างเดียว ไม่ต้องล็อกอิน -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyBsXC2CMoj-SBqydxOxjIg2MllLEFilsDg",
+      authDomain: "cmcat-guidance.firebaseapp.com",
+      projectId: "cmcat-guidance",
+      storageBucket: "cmcat-guidance.firebasestorage.app",
+      messagingSenderId: "890130087145",
+      appId: "1:890130087145:web:ad436b2f915a436e92c478"
+    };
+    try {
+      const db = getFirestore(initializeApp(firebaseConfig));
+      onSnapshot(doc(db, "config", "dashboard"),
+        snap => {
+          if (!snap.exists() || !window.__setDashboardData) return;
+          const raw = snap.data().json;
+          if (!raw) return;
+          try { window.__setDashboardData(JSON.parse(raw)); }
+          catch (e) { console.warn("ข้อมูลคลาวด์อ่านไม่ได้:", e); }
+        },
+        err => console.warn("อ่านข้อมูลคลาวด์ไม่สำเร็จ:", err && err.code));
+    } catch (e) { console.warn("เริ่ม Firebase ไม่สำเร็จ:", e); }
+  </script>
 </body>
 </html>

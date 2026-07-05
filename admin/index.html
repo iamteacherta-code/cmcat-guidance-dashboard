@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>แก้ไขข้อมูลแดชบอร์ด (คลาวด์) · งานแนะแนว วษท.เชียงใหม่</title>
+<link rel="icon" type="image/webp" href="../assets/img/logo.webp" />
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--green:#2e7d32;--green-d:#1b5e20;--green-l:#66bb6a;--green-bg:#e8f5e9;
+  --ink:#1f2d24;--muted:#6a7a70;--line:#e2e8e2;--bg:#f4f7f3;--card:#fff;--gold:#f9a825;
+  --shadow:0 2px 10px rgba(30,60,40,.08);--radius:14px;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Sarabun","Leelawadee UI","Noto Sans Thai",Tahoma,sans-serif;line-height:1.5}
+button,input,select,textarea{font-family:inherit}
+h1,h2,h3,h4{margin:0}
+.hidden{display:none !important}
+.loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:90}
+.spinner{width:44px;height:44px;border:4px solid var(--green-bg);border-top-color:var(--green);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--green-d),var(--green));display:grid;place-items:center;z-index:100;padding:20px}
+.gate-box{background:#fff;border-radius:20px;padding:34px 30px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.gate-box img{width:70px;height:70px;border-radius:50%;object-fit:contain}
+.gate-box h1{font-size:1.1rem;margin:12px 0 4px;color:var(--green-d)}
+.gate-box p{color:var(--muted);font-size:.85rem;margin:0 0 18px}
+.gate-box input{width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:10px;font-size:1rem;text-align:center;margin-bottom:12px}
+.gate-box input:focus{outline:none;border-color:var(--green)}
+.gate-err{color:#c62828;font-size:.85rem;min-height:1.2em;margin-bottom:8px}
+.badge{display:inline-block;font-size:.72rem;font-weight:700;background:#fff8e1;color:#b8860b;padding:3px 10px;border-radius:20px;margin-bottom:10px}
+.top{background:linear-gradient(120deg,var(--green-d),var(--green));color:#fff;padding:12px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:30;flex-wrap:wrap}
+.top img{width:42px;height:42px;border-radius:50%;background:#fff;padding:2px;object-fit:contain}
+.top h1{font-size:1rem}
+.top .sub{font-size:.75rem;opacity:.9}
+.top .spacer{flex:1}
+.top a,.top button{background:rgba(255,255,255,.16);color:#fff;border:none;padding:8px 14px;border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;text-decoration:none}
+.top a:hover,.top button:hover{background:rgba(255,255,255,.28)}
+.top .save{background:#fff;color:var(--green-d)}
+.top .save:hover{background:#f0f0f0}
+.tabs{background:#fff;border-bottom:1px solid var(--line);display:flex;gap:2px;padding:0 12px;position:sticky;top:66px;z-index:29;overflow-x:auto}
+.tabs button{background:none;border:none;padding:12px 16px;font-size:.9rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button.active{color:var(--green-d);border-bottom-color:var(--green)}
+main{max-width:960px;margin:0 auto;padding:20px 18px 80px}
+.view{display:none}.view.active{display:block}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+.card h3{color:var(--green-d);font-size:1rem;margin-bottom:4px}
+.card .hint{font-size:.82rem;color:var(--muted);margin:0 0 14px}
+.fld{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.fld label{font-size:.82rem;color:var(--muted);font-weight:600}
+input,select,textarea{padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:.9rem;background:#fff;width:100%}
+input:focus,select,textarea:focus{outline:none;border-color:var(--green-l)}
+.etbl{width:100%;border-collapse:collapse;font-size:.88rem}
+.etbl th{text-align:left;font-size:.76rem;color:var(--muted);font-weight:600;padding:4px 6px}
+.etbl td{padding:3px 4px}
+.etbl input{padding:7px 9px}
+.xbtn{background:#ffebee;color:#c62828;border:none;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:.9rem}
+.xbtn:hover{background:#ffcdd2}
+.btn{background:var(--green);color:#fff;border:none;padding:9px 16px;border-radius:9px;cursor:pointer;font-size:.88rem;font-weight:600;width:auto}
+.btn:hover{background:var(--green-d)}
+.btn.sec{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.sec:hover{background:var(--green-bg)}
+.btn.sm{padding:6px 12px;font-size:.82rem;margin-top:8px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:600px){.row2,.row3{grid-template-columns:1fr}}
+.sub-h{font-weight:700;color:var(--green-d);font-size:.92rem;margin:14px 0 6px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green-d);color:#fff;padding:12px 22px;border-radius:30px;font-size:.9rem;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.3);opacity:0;transition:.25s;z-index:80;pointer-events:none}
+.toast.show{opacity:1;bottom:30px}
+.savebar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);padding:12px 18px;display:flex;justify-content:center;gap:12px;z-index:40;box-shadow:0 -4px 16px rgba(0,0,0,.06)}
+.savebar .btn{padding:11px 30px;font-size:.95rem}
+.prov-pick{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading"><div style="text-align:center"><div class="spinner"></div>
+  <p style="color:var(--muted);margin-top:14px;font-size:.9rem">กำลังเชื่อมต่อคลาวด์…</p></div></div>
+
+<div class="gate hidden" id="gate">
+  <div class="gate-box">
+    <img src="../assets/img/logo.webp" alt="โลโก้" onerror="this.style.display='none'"/>
+    <div><span class="badge">✏️ สำหรับผู้ดูแลข้อมูล</span></div>
+    <h1>แก้ไขข้อมูลแดชบอร์ด</h1>
+    <p>ล็อกอินด้วยรหัสผ่านร่วมของทีมงานแนะแนว</p>
+    <div class="gate-err" id="gateErr"></div>
+    <input type="password" id="gatePass" placeholder="กรอกรหัสผ่านของทีม" autocomplete="current-password"/>
+    <button class="btn" style="width:100%" id="gateBtn">เข้าสู่ระบบ</button>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <div class="top">
+    <img src="../assets/img/logo.webp" alt="โลโก้" onerror="this.style.display='none'"/>
+    <div><h1>แก้ไขข้อมูลแดชบอร์ด</h1><div class="sub">แก้แล้วเผยแพร่สู่หน้าเว็บทันที (เรียลไทม์)</div></div>
+    <div class="spacer"></div>
+    <a href="../" target="_blank">🔗 เปิดแดชบอร์ด</a>
+    <button id="btnLogout">ออกจากระบบ</button>
+    <button class="save" id="btnSaveTop">💾 บันทึก & เผยแพร่</button>
+  </div>
+
+  <div class="tabs">
+    <button class="active" data-tab="meta">ทั่วไป</button>
+    <button data-tab="enroll">จำนวนนักเรียน</button>
+    <button data-tab="adm">รับสมัคร</button>
+    <button data-tab="survey">แบบสำรวจ</button>
+    <button data-tab="map">แผนที่/สถานศึกษา</button>
+    <button data-tab="grad">ภาวะผู้จบ</button>
+    <button data-tab="staff">ผู้ปฏิบัติงาน</button>
+  </div>
+
+  <main>
+    <div class="view active" id="view-meta"></div>
+    <div class="view" id="view-enroll"></div>
+    <div class="view" id="view-adm"></div>
+    <div class="view" id="view-survey"></div>
+    <div class="view" id="view-map"></div>
+    <div class="view" id="view-grad"></div>
+    <div class="view" id="view-staff"></div>
+  </main>
+
+  <div class="savebar"><button class="btn" id="btnSave">💾 บันทึก & เผยแพร่สู่แดชบอร์ด</button></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/northmap.js"></script>
+<script>window.CMCAT_DEFAULTS = CMCAT; window.NORTH = (typeof NORTH_MAP!=='undefined')?NORTH_MAP:null;</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence }
+  from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBsXC2CMoj-SBqydxOxjIg2MllLEFilsDg",
+  authDomain: "cmcat-guidance.firebaseapp.com",
+  projectId: "cmcat-guidance",
+  storageBucket: "cmcat-guidance.firebasestorage.app",
+  messagingSenderId: "890130087145",
+  appId: "1:890130087145:web:ad436b2f915a436e92c478"
+};
+const SHARED_EMAIL = "guidance@cmcat.app";
+const auth = getAuth(initializeApp(firebaseConfig));
+const db = getFirestore(auth.app);
+
+const $ = id => document.getElementById(id);
+const escA = s => String(s==null?"":s).replace(/"/g,"&quot;").replace(/</g,"&lt;");
+let work = null;
+
+/* ---------- AUTH ---------- */
+$("gateBtn").onclick = login;
+$("gatePass").addEventListener("keydown", e => { if (e.key==="Enter") login(); });
+function login(){
+  const p=$("gatePass").value; if(!p){$("gateErr").textContent="กรุณากรอกรหัสผ่าน";return;}
+  $("gateBtn").disabled=true; $("gateBtn").textContent="กำลังเข้าสู่ระบบ…"; $("gateErr").textContent="";
+  signInWithEmailAndPassword(auth, SHARED_EMAIL, p)
+    .catch(e=>{ $("gateErr").textContent=(e.code==="auth/invalid-credential"||e.code==="auth/wrong-password")?"รหัสผ่านไม่ถูกต้อง":("ผิดพลาด: "+e.code); $("gatePass").value=""; })
+    .finally(()=>{ $("gateBtn").disabled=false; $("gateBtn").textContent="เข้าสู่ระบบ"; });
+}
+$("btnLogout").onclick = ()=>signOut(auth);
+
+setPersistence(auth, browserLocalPersistence).finally(()=>{
+  onAuthStateChanged(auth, async user=>{
+    $("loading").classList.add("hidden");
+    if(user){ $("gate").classList.add("hidden"); $("app").classList.remove("hidden"); await loadData(); }
+    else { $("app").classList.add("hidden"); $("gate").classList.remove("hidden"); $("gatePass").focus(); }
+  });
+});
+
+async function loadData(){
+  let base = JSON.parse(JSON.stringify(window.CMCAT_DEFAULTS));
+  try{
+    const snap = await getDoc(doc(db,"config","dashboard"));
+    if(snap.exists() && snap.data().json) base = JSON.parse(snap.data().json);
+  }catch(e){ console.warn("โหลดข้อมูลคลาวด์ไม่ได้ ใช้ค่าเริ่มต้น",e); }
+  work = base;
+  renderAll();
+}
+
+/* ---------- ตัวช่วยตารางแก้ไข ---------- */
+function grid(mount, arr, cols, blank){
+  function draw(){
+    mount.innerHTML = `<table class="etbl"><thead><tr>${cols.map(c=>`<th>${c.label}</th>`).join("")}<th></th></tr></thead>
+      <tbody>${arr.map((it,i)=>`<tr>${cols.map(c=>`<td><input data-i="${i}" data-k="${c.k}" type="${c.type==='num'?'number':'text'}" value="${escA(it[c.k])}"></td>`).join("")}
+        <td><button class="xbtn" data-del="${i}">✕</button></td></tr>`).join("")}</tbody></table>
+      <button class="btn sec sm" data-add>+ เพิ่มแถว</button>`;
+    mount.querySelectorAll("input").forEach(inp=>inp.oninput=()=>{
+      const it=arr[+inp.dataset.i]; it[inp.dataset.k]= inp.type==="number" ? (parseInt(inp.value)||0) : inp.value;
+    });
+    mount.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{arr.splice(+b.dataset.del,1);draw();});
+    mount.querySelector("[data-add]").onclick=()=>{arr.push(blank());draw();};
+  }
+  draw();
+}
+
+/* ---------- ตัวช่วย input ผูกกับ object ---------- */
+function bind(el, obj, key){ el.value=obj[key]==null?"":obj[key]; el.oninput=()=>obj[key]= el.type==="number"?(parseInt(el.value)||0):el.value; }
+function fld(label, obj, key, type="text"){
+  const w=document.createElement("div"); w.className="fld";
+  w.innerHTML=`<label>${label}</label><${type==="area"?"textarea":"input"} ${type==="num"?'type="number"':type==="area"?'rows="2"':''}></${type==="area"?"textarea":"input"}>`;
+  bind(w.querySelector(type==="area"?"textarea":"input"), obj, key); return w;
+}
+
+/* ---------- เรนเดอร์แต่ละแท็บ ---------- */
+function renderAll(){ meta(); enroll(); adm(); survey(); mapEd(); grad(); staff(); }
+
+function meta(){
+  const v=$("view-meta"); v.innerHTML=`<div class="card"><h3>ข้อมูลทั่วไป</h3>
+    <p class="hint">ข้อความหัวเว็บและวันที่อัปเดต</p></div>`;
+  const card=v.querySelector(".card");
+  card.appendChild(fld("ชื่อวิทยาลัย", work.meta, "college"));
+  card.appendChild(fld("ชื่อฝ่าย/งาน", work.meta, "department"));
+  card.appendChild(fld("ข้อความ 'ข้อมูลล่าสุด'", work.meta, "updated"));
+  card.appendChild(fld("แหล่งข้อมูล (ท้ายเว็บ)", work.meta, "source", "area"));
+}
+function enroll(){
+  const v=$("view-enroll"); v.innerHTML=`<div class="card"><h3>จำนวน นร.นศ. รายปี</h3>
+    <p class="hint">ปีการศึกษา (พ.ศ.) และจำนวนรวมในระบบ · เรียงจากเก่าไปใหม่</p><div id="gEnroll"></div></div>`;
+  grid($("gEnroll"), work.enrollment, [{k:"year",label:"ปีการศึกษา",type:"num"},{k:"total",label:"จำนวน (คน)",type:"num"}], ()=>({year:2570,total:0}));
+}
+function adm(){
+  const a=work.admission2569;
+  const v=$("view-adm"); v.innerHTML=`<div class="card"><h3>การรับสมัครนักศึกษาใหม่</h3>
+    <p class="hint">แต่ละรอบ แยก ปวช./ปวส. และช่องทางสมัครตรง/ออนไลน์</p><div id="admRounds"></div>
+    <div class="sub-h">ยอดรายงานตัวจริง</div><div class="row2" id="admRep"></div>
+    <div id="admNote"></div></div>`;
+  const rd=$("admRounds");
+  a.rounds.forEach((r,i)=>{
+    const box=document.createElement("div"); box.className="card"; box.style.background="#fafcfa";
+    box.innerHTML=`<div class="sub-h">รอบที่ ${i+1}</div>`;
+    box.appendChild(fld("ชื่อรอบ", r, "name")); box.appendChild(fld("ช่วงเวลา", r, "period"));
+    box.insertAdjacentHTML("beforeend",`<div class="sub-h">ปวช.</div>`);
+    const p1=document.createElement("div"); p1.className="row2"; p1.append(fld("สมัครตรง",r.pvc,"direct","num"),fld("ออนไลน์",r.pvc,"online","num")); box.append(p1);
+    box.insertAdjacentHTML("beforeend",`<div class="sub-h">ปวส.</div>`);
+    const p2=document.createElement("div"); p2.className="row2"; p2.append(fld("สมัครตรง",r.pvs,"direct","num"),fld("ออนไลน์",r.pvs,"online","num")); box.append(p2);
+    rd.append(box);
+  });
+  $("admRep").append(fld("ปวช. (คน)",a.reported,"pvc","num"),fld("ปวส. (คน)",a.reported,"pvs","num"));
+  $("admNote").append(fld("หมายเหตุ", a, "note", "area"));
+}
+function survey(){
+  const s=work.survey;
+  const v=$("view-survey"); v.innerHTML=`<div class="card"><h3>แบบสำรวจการตัดสินใจเข้าเรียน</h3>
+    <p class="hint">จำนวนผู้ตอบรวม และผลแต่ละหมวด (ป้าย = ตัวเลือก, จำนวน = คนที่ตอบ)</p>
+    <div id="svTotal"></div>
+    <div class="sub-h">ระดับที่เข้าเรียน</div><div id="gLevel"></div>
+    <div class="sub-h">ช่องทางที่ทราบข่าว</div><div id="gChannel"></div>
+    <div class="sub-h">ผู้มีอิทธิพลต่อการตัดสินใจ</div><div id="gInfluence"></div>
+    <div class="sub-h">เหตุผลที่เลือกเรียน</div><div id="gReason"></div></div>`;
+  $("svTotal").append(fld("จำนวนผู้ตอบทั้งหมด (คน)", s, "total", "num"));
+  const cols=[{k:"label",label:"ตัวเลือก"},{k:"value",label:"จำนวน",type:"num"}], blank=()=>({label:"",value:0});
+  grid($("gLevel"),s.level,cols,blank); grid($("gChannel"),s.channel,cols,blank);
+  grid($("gInfluence"),s.influence,cols,blank); grid($("gReason"),s.reason,cols,blank);
+}
+function mapEd(){
+  const op=work.originProvinces;
+  const yk=Object.keys(op.years)[0];       // ปีเดียว (2569)
+  const yd=op.years[yk];
+  const provNames=(window.NORTH?window.NORTH.provinces.map(p=>p.name):[]).concat(["อื่น ๆ (นอกภาคเหนือ)"]);
+  const v=$("view-map"); v.innerHTML=`<div class="card"><h3>แผนที่ต้นทางนักศึกษา (ปี ${yk})</h3>
+    <p class="hint">เลือกจังหวัด แล้วเพิ่ม/แก้รายชื่อสถานศึกษาเดิม (โรงเรียน · อำเภอ · จำนวน) — ยอดรวมและสีบนแผนที่คำนวณให้อัตโนมัติ</p>
+    <div class="prov-pick"><label>จังหวัด:</label><select id="mProv"></select>
+      <button class="btn sec sm" id="mDelProv" style="margin-top:0">ลบจังหวัดนี้</button></div>
+    <div id="mSchools"></div></div>`;
+  const sel=$("mProv");
+  const refreshSel=(cur)=>{
+    const keys=Object.keys(yd);
+    const opts=keys.map(k=>`<option${k===cur?" selected":""}>${escA(k)}</option>`).join("");
+    const addable=provNames.filter(p=>!keys.includes(p));
+    sel.innerHTML=opts+(addable.length?`<option disabled>──────</option>`+addable.map(p=>`<option value="__add__${escA(p)}">+ เพิ่ม ${escA(p)}</option>`).join(""):"");
+  };
+  let curProv=Object.keys(yd)[0]||provNames[0];
+  if(!yd[curProv]) { yd[curProv]=[]; }
+  refreshSel(curProv);
+  const drawSchools=()=>{
+    grid($("mSchools"), yd[curProv],
+      [{k:"s",label:"โรงเรียน/สถานศึกษาเดิม"},{k:"a",label:"อำเภอ"},{k:"n",label:"จำนวน",type:"num"}],
+      ()=>({s:"",a:"",n:0}));
+  };
+  sel.onchange=()=>{
+    const val=sel.value;
+    if(val.startsWith("__add__")){ const p=val.slice(7); yd[p]=yd[p]||[]; curProv=p; refreshSel(curProv); drawSchools(); return; }
+    curProv=val; drawSchools();
+  };
+  $("mDelProv").onclick=()=>{ if(confirm("ลบข้อมูลจังหวัด "+curProv+" ?")){ delete yd[curProv]; curProv=Object.keys(yd)[0]; if(!curProv){provNames[0]&&(yd[provNames[0]]=[]);curProv=provNames[0];} refreshSel(curProv); drawSchools(); } };
+  drawSchools();
+}
+function grad(){
+  const g=work.graduates;
+  const v=$("view-grad"); v.innerHTML=`<div class="card"><h3>ภาวะการมีงานทำ/ศึกษาต่อของผู้จบ</h3>
+    <p class="hint">แต่ละปี: สาขา · จบ · ติดตามได้ · ศึกษาต่อ · รองาน · มีงานทำ · อื่นๆ</p><div id="gradYears"></div></div>`;
+  const box=$("gradYears");
+  Object.keys(g).sort((a,b)=>b-a).forEach(y=>{
+    const c=document.createElement("div"); c.className="card"; c.style.background="#fafcfa";
+    c.innerHTML=`<div class="sub-h">ปีการศึกษา ${y}</div>`;
+    c.appendChild(fld("รอบการติดตาม (คำอธิบาย)", g[y], "round"));
+    const gm=document.createElement("div"); c.appendChild(gm);
+    grid(gm, g[y].rows,
+      [{k:0,label:"สาขา"},{k:1,label:"จบ",type:"num"},{k:2,label:"ติดตาม",type:"num"},{k:3,label:"ศึกษาต่อ",type:"num"},
+       {k:4,label:"รองาน",type:"num"},{k:5,label:"มีงาน",type:"num"},{k:6,label:"อื่นๆ",type:"num"}],
+      ()=>["",0,0,0,0,0,0]);
+    box.appendChild(c);
+  });
+}
+function staff(){
+  const v=$("view-staff"); v.innerHTML=`<div class="card"><h3>ผู้ปฏิบัติงานแนะแนว</h3>
+    <p class="hint">ชื่อ-ตำแหน่ง และหน้าที่</p><div id="gStaff"></div>
+    <div class="sub-h">หมายเหตุ (ท้ายส่วน)</div><div id="staffNote"></div></div>`;
+  grid($("gStaff"), work.staff,
+    [{k:"role",label:"ตำแหน่ง (ป้าย)"},{k:"name",label:"ชื่อ-ตำแหน่งเต็ม"},{k:"tasks",label:"หน้าที่"}],
+    ()=>({role:"",name:"",tasks:""}));
+  $("staffNote").append(fld("", work, "staffNote", "area"));
+}
+
+/* ---------- แท็บ ---------- */
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("active",x===b));
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  $("view-"+b.dataset.tab).classList.add("active");
+});
+
+/* ---------- บันทึก ---------- */
+async function save(){
+  const btns=[$("btnSave"),$("btnSaveTop")]; btns.forEach(b=>{b.disabled=true;});
+  $("btnSave").textContent="กำลังบันทึก…";
+  try{
+    await setDoc(doc(db,"config","dashboard"), { json: JSON.stringify(work), updatedAt: new Date().toISOString() });
+    toast("✓ บันทึกแล้ว — เผยแพร่สู่แดชบอร์ดทันที");
+  }catch(e){ toast("บันทึกไม่สำเร็จ: "+e.code); console.error(e); }
+  finally{ btns.forEach(b=>b.disabled=false); $("btnSave").textContent="💾 บันทึก & เผยแพร่สู่แดชบอร์ด"; }
+}
+$("btnSave").onclick=save; $("btnSaveTop").onclick=save;
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
+
+// ทดสอบ UI เฉพาะตอนรันในเครื่อง (localhost) — ปิดใช้งานบนเว็บจริง เพราะบันทึกต้องผ่าน Firestore ที่ต้องล็อกอินอยู่ดี
+if(location.hostname==="localhost"||location.hostname==="127.0.0.1"){
+  window.__adminTest=()=>{ work=JSON.parse(JSON.stringify(window.CMCAT_DEFAULTS)); renderAll();
+    $("loading").classList.add("hidden"); $("gate").classList.add("hidden"); $("app").classList.remove("hidden"); return "ok"; };
+  window.__getWork=()=>work;
+}
+</script>
+</body>
+</html>
