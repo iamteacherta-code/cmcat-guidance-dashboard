@@ -78,85 +78,143 @@
     const t = 0.18 + 0.82 * Math.sqrt(v / max);   // sqrt เพื่อให้จังหวัดเล็กยังเห็นสี
     return lerpHex("#c8e6c9", "#1b5e20", t);
   }
+  let _mapYear = null, _selProv = null;
+  const escH = s => String(s == null ? "" : s).replace(/[&<>"]/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
   function originMap() {
     const cfg = CMCAT.originProvinces;
-    if (!cfg || typeof NORTH_MAP === "undefined") return;
-    const data = cfg.data;
-    const north = Object.values(data).reduce((a, b) => a + b, 0);
-    const grand = north + (cfg.other || 0);
-    const max = Math.max(1, ...Object.values(data));
-    $("#mapSub").innerHTML = `${cfg.note} · ปีการศึกษา ${cfg.year} ` +
-      `<span class="muted-sm">(รวมภาคเหนือ ${fmt(north)} คน` +
-      (cfg.other ? ` · นอกภาคเหนือ ${fmt(cfg.other)} คน` : "") + `)</span>`;
+    if (!cfg || !cfg.years || typeof NORTH_MAP === "undefined") return;
+    const years = Object.keys(cfg.years).sort((a, b) => b - a);
+    if (_mapYear == null) _mapYear = String(cfg.defaultYear || years[0]);
+    if (!cfg.years[_mapYear]) _mapYear = years[0];
 
-    // ---- SVG ----
-    const M = NORTH_MAP;
-    let s = `<svg viewBox="${M.viewBox}" class="north-map" role="img" aria-label="แผนที่ภาคเหนือ">`;
-    M.provinces.forEach(p => {
-      const v = data[p.name] || 0, pct = grand ? Math.round(v / grand * 100) : 0;
-      s += `<path d="${p.d}" class="prov" fill="${provColor(v, max)}" ` +
-        `data-name="${p.name}" data-v="${v}" data-pct="${pct}"></path>`;
-    });
-    M.provinces.forEach(p => {
-      const v = data[p.name] || 0;
-      s += `<text x="${p.c[0]}" y="${p.c[1] - 2}" class="prov-lb">${p.name}</text>`;
-      if (v) s += `<text x="${p.c[0]}" y="${p.c[1] + 12}" class="prov-ct">${fmt(v)}</text>`;
-    });
-    s += `</svg>`;
-    $("#originMapSvg").innerHTML = s;
+    const sel = $("#mapYear");
+    sel.innerHTML = years.map(y => `<option value="${y}">ปี ${y}</option>`).join("");
+    sel.value = _mapYear;
+    sel.onchange = () => { _mapYear = sel.value; _selProv = null; draw(); };
+    draw();
 
-    // ---- legend ----
-    $("#mapLegend").innerHTML =
-      `<span class="lg-cap">น้อย</span>
-       <span class="lg-bar"></span>
-       <span class="lg-cap">มาก</span>
-       <span class="lg-zero"><i></i> ไม่มีข้อมูล</span>`;
+    function yearData() { return cfg.years[_mapYear] || {}; }
+    function totals() {
+      const yd = yearData(), t = {};
+      Object.keys(yd).forEach(p => t[p] = yd[p].reduce((a, s) => a + (s.n || 0), 0));
+      return t;
+    }
 
-    // ---- ranked list ----
-    const ranked = Object.entries(data).sort((a, b) => b[1] - a[1]);
-    const rmax = ranked.length ? ranked[0][1] : 1;
-    $("#originList").innerHTML = `<h3>อันดับจังหวัดต้นทาง</h3>` +
-      ranked.map(([n, v]) => `
-        <div class="ori-row" data-name="${n}">
-          <span class="ori-n">${n}</span>
-          <span class="ori-track"><span class="ori-fill" style="width:${v / rmax * 100}%"></span></span>
-          <span class="ori-v">${fmt(v)} <b>(${Math.round(v / grand * 100)}%)</b></span>
-        </div>`).join("") +
-      (cfg.other ? `<div class="ori-row other"><span class="ori-n">นอกภาคเหนือตอนบน</span>
-        <span class="ori-track"><span class="ori-fill" style="width:${(cfg.other) / rmax * 100}%"></span></span>
-        <span class="ori-v">${fmt(cfg.other)} <b>(${Math.round(cfg.other / grand * 100)}%)</b></span></div>` : "") +
-      `<div class="ori-total">รวมทั้งหมด <b>${fmt(grand)}</b> คน</div>`;
+    function draw() {
+      const tot = totals();
+      const onMap = new Set(NORTH_MAP.provinces.map(p => p.name));
+      const outside = Object.keys(tot).filter(p => !onMap.has(p)).reduce((a, p) => a + tot[p], 0);
+      const grand = Object.values(tot).reduce((a, b) => a + b, 0) || 1;
+      const max = Math.max(1, ...NORTH_MAP.provinces.map(p => tot[p.name] || 0));
 
-    // ---- interactivity: tooltip + เชื่อมแผนที่กับรายการ ----
-    const tip = $("#mapTip");
-    const showTip = (e, name, v, pct) => {
-      tip.hidden = false;
-      tip.innerHTML = `<b>${name}</b><br>${fmt(v)} คน · ${pct}% ของนักศึกษาใหม่`;
-      const pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
-      let x = e.clientX + pad, y = e.clientY + pad;
-      if (x + w > innerWidth) x = e.clientX - w - pad;
-      if (y + h > innerHeight) y = e.clientY - h - pad;
-      tip.style.left = x + "px"; tip.style.top = y + "px";
-    };
-    const hideTip = () => { tip.hidden = true; };
-    const paths = $("#originMapSvg").querySelectorAll(".prov");
-    paths.forEach(el => {
-      const name = el.dataset.name, v = +el.dataset.v, pct = +el.dataset.pct;
-      const on = e => { el.classList.add("hot"); hi(name, true); showTip(e, name, v, pct); };
-      el.addEventListener("pointerenter", on);
-      el.addEventListener("pointermove", on);
-      el.addEventListener("pointerleave", () => { el.classList.remove("hot"); hi(name, false); hideTip(); });
-    });
+      $("#mapSub").innerHTML = `${cfg.note} · ปีการศึกษา ${_mapYear} ` +
+        `<span class="muted-sm">(รวม ${fmt(grand)} คน` +
+        (outside ? ` · นอกภาคเหนือ ${fmt(outside)} คน` : "") + `)</span>`;
+
+      // ---- SVG map ----
+      const M = NORTH_MAP;
+      let s = `<svg viewBox="${M.viewBox}" class="north-map" role="img" aria-label="แผนที่ภาคเหนือ">`;
+      M.provinces.forEach(p => {
+        const v = tot[p.name] || 0, pct = Math.round(v / grand * 100);
+        s += `<path d="${p.d}" class="prov" fill="${provColor(v, max)}" ` +
+          `data-name="${escH(p.name)}" data-v="${v}" data-pct="${pct}"></path>`;
+      });
+      M.provinces.forEach(p => {
+        const v = tot[p.name] || 0;
+        s += `<text x="${p.c[0]}" y="${p.c[1] - 2}" class="prov-lb">${p.name}</text>`;
+        if (v) s += `<text x="${p.c[0]}" y="${p.c[1] + 12}" class="prov-ct">${fmt(v)}</text>`;
+      });
+      s += `</svg>`;
+      $("#originMapSvg").innerHTML = s;
+
+      $("#mapLegend").innerHTML =
+        `<span class="lg-cap">น้อย</span><span class="lg-bar"></span><span class="lg-cap">มาก</span>
+         <span class="lg-zero"><i></i> ยังไม่มีข้อมูล · 👆 คลิกจังหวัดเพื่อดูรายชื่อโรงเรียน</span>`;
+
+      // ---- ranked list ----
+      const ranked = Object.entries(tot).sort((a, b) => b[1] - a[1]);
+      const rmax = ranked.length ? ranked[0][1] : 1;
+      $("#originList").innerHTML = `<h3>อันดับจังหวัดต้นทาง</h3>` +
+        ranked.map(([n, v]) => `
+          <div class="ori-row${n === _selProv ? " sel" : ""}" data-name="${escH(n)}">
+            <span class="ori-n">${escH(n)}</span>
+            <span class="ori-track"><span class="ori-fill" style="width:${v / rmax * 100}%"></span></span>
+            <span class="ori-v">${fmt(v)} <b>(${Math.round(v / grand * 100)}%)</b></span>
+          </div>`).join("") +
+        `<div class="ori-total">รวมทั้งหมด <b>${fmt(grand)}</b> คน</div>`;
+
+      wire(grand);
+      renderSchools();
+    }
+
     function hi(name, on) {
-      const row = $("#originList").querySelector(`.ori-row[data-name="${CSS.escape(name)}"]`);
-      if (row) row.classList.toggle("hot", on);
       const p = $("#originMapSvg").querySelector(`.prov[data-name="${CSS.escape(name)}"]`);
       if (p) p.classList.toggle("hot", on);
+      const r = $("#originList").querySelector(`.ori-row[data-name="${CSS.escape(name)}"]`);
+      if (r) r.classList.toggle("hot", on);
     }
-    $("#originList").querySelectorAll(".ori-row[data-name]").forEach(row => {
-      row.addEventListener("mouseenter", () => hi(row.dataset.name, true));
-      row.addEventListener("mouseleave", () => hi(row.dataset.name, false));
-    });
+    function markSel() {
+      $("#originMapSvg").querySelectorAll(".prov").forEach(p => p.classList.toggle("sel", p.dataset.name === _selProv));
+      $("#originList").querySelectorAll(".ori-row").forEach(r => r.classList.toggle("sel", r.dataset.name === _selProv));
+    }
+    function pick(name) { _selProv = name; markSel(); renderSchools(); }
+
+    function wire(grand) {
+      const tip = $("#mapTip");
+      const showTip = (e, name, v, pct) => {
+        tip.hidden = false;
+        tip.innerHTML = `<b>${escH(name)}</b><br>${fmt(v)} คน · ${pct}% ของนักศึกษาใหม่<br><span style="opacity:.8">คลิกเพื่อดูสถานศึกษาเดิม</span>`;
+        const pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+        let x = e.clientX + pad, y = e.clientY + pad;
+        if (x + w > innerWidth) x = e.clientX - w - pad;
+        if (y + h > innerHeight) y = e.clientY - h - pad;
+        tip.style.left = x + "px"; tip.style.top = y + "px";
+      };
+      const hideTip = () => { tip.hidden = true; };
+      $("#originMapSvg").querySelectorAll(".prov").forEach(el => {
+        const name = el.dataset.name, v = +el.dataset.v, pct = +el.dataset.pct;
+        const on = e => { hi(name, true); showTip(e, name, v, pct); };
+        el.addEventListener("pointerenter", on);
+        el.addEventListener("pointermove", on);
+        el.addEventListener("pointerleave", () => { hi(name, false); hideTip(); });
+        el.addEventListener("click", () => pick(name));
+      });
+      $("#originList").querySelectorAll(".ori-row[data-name]").forEach(row => {
+        row.addEventListener("mouseenter", () => hi(row.dataset.name, true));
+        row.addEventListener("mouseleave", () => hi(row.dataset.name, false));
+        row.addEventListener("click", () => {
+          pick(row.dataset.name);
+          $("#schoolPanel").scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
+      });
+    }
+
+    function renderSchools() {
+      const box = $("#schoolPanel");
+      box.classList.toggle("active", !!_selProv);
+      if (!_selProv) {
+        box.innerHTML = `<div class="sch-empty">👆 คลิกที่จังหวัดบนแผนที่ (หรือในรายการ) เพื่อดูรายชื่อ
+          <b>สถานศึกษาเดิม</b> ของนักศึกษาจากจังหวัดนั้น — ช่วยครูวางแผนออกแนะแนวได้ตรงเป้า</div>`;
+        return;
+      }
+      const schools = (yearData()[_selProv] || []).slice().sort((a, b) => (b.n || 0) - (a.n || 0));
+      const total = schools.reduce((a, s) => a + (s.n || 0), 0);
+      box.innerHTML =
+        `<div class="sch-head"><h3>🏫 สถานศึกษาเดิม — ${escH(_selProv)} <span class="tag">ปี ${_mapYear}</span></h3>
+          <button class="link-btn" id="schClose">✕ ปิด</button></div>` +
+        (schools.length
+          ? `<div class="tbl-wrap-in"><table class="tbl"><thead><tr>
+              <th>โรงเรียน / สถานศึกษาเดิม</th><th>อำเภอ</th><th class="num">จำนวน (คน)</th></tr></thead><tbody>
+              ${schools.map(s => `<tr><td>${escH(s.s)}</td><td>${escH(s.a || "-")}</td>
+                <td class="num">${fmt(s.n || 0)}</td></tr>`).join("")}
+              <tr class="total-row"><td>รวม ${escH(_selProv)}</td><td></td><td class="num">${fmt(total)}</td></tr>
+            </tbody></table></div>`
+          : `<div class="sch-empty">ยังไม่มีข้อมูลสถานศึกษาเดิมของ <b>${escH(_selProv)}</b> ในปี ${_mapYear}
+              <br><span class="muted-sm">เพิ่มได้ที่ data.js → originProvinces.years["${_mapYear}"]["${escH(_selProv)}"]</span></div>`);
+      const c = $("#schClose"); if (c) c.onclick = () => pick(null);
+    }
   }
 
   /* ================= 2. จำนวนนักเรียน ================= */

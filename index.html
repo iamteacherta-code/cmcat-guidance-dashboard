@@ -61,7 +61,10 @@
       <div id="kpis" class="kpi-grid"></div>
       <p id="overviewNote" class="callout"></p>
 
-      <h3 class="map-title">🗺️ แผนที่ต้นทางนักศึกษาใหม่ — สถานศึกษาเดิมมาจากจังหวัดใดในภาคเหนือ</h3>
+      <div class="map-head">
+        <h3 class="map-title">🗺️ แผนที่ต้นทางนักศึกษาใหม่ — สถานศึกษาเดิมมาจากจังหวัดใดในภาคเหนือ</h3>
+        <div class="year-pick"><label>ปีการศึกษา:</label><select id="mapYear"></select></div>
+      </div>
       <p class="sub" id="mapSub"></p>
       <div class="map-wrap">
         <div class="card map-card">
@@ -70,6 +73,7 @@
         </div>
         <div class="card" id="originList"></div>
       </div>
+      <div class="card" id="schoolPanel"></div>
     </section>
 
     <!-- 2 จำนวนนักเรียน -->
