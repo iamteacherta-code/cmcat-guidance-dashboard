@@ -201,19 +201,77 @@
       }
       const schools = (yearData()[_selProv] || []).slice().sort((a, b) => (b.n || 0) - (a.n || 0));
       const total = schools.reduce((a, s) => a + (s.n || 0), 0);
-      box.innerHTML =
-        `<div class="sch-head"><h3>🏫 สถานศึกษาเดิม — ${escH(_selProv)} <span class="tag">ปี ${_mapYear}</span></h3>
-          <button class="link-btn" id="schClose">✕ ปิด</button></div>` +
-        (schools.length
-          ? `<div class="tbl-wrap-in"><table class="tbl"><thead><tr>
-              <th>โรงเรียน / สถานศึกษาเดิม</th><th>อำเภอ</th><th class="num">จำนวน (คน)</th></tr></thead><tbody>
-              ${schools.map(s => `<tr><td>${escH(s.s)}</td><td>${escH(s.a || "-")}</td>
-                <td class="num">${fmt(s.n || 0)}</td></tr>`).join("")}
-              <tr class="total-row"><td>รวม ${escH(_selProv)}</td><td></td><td class="num">${fmt(total)}</td></tr>
-            </tbody></table></div>`
-          : `<div class="sch-empty">ยังไม่มีข้อมูลสถานศึกษาเดิมของ <b>${escH(_selProv)}</b> ในปี ${_mapYear}
-              <br><span class="muted-sm">เพิ่มได้ที่ data.js → originProvinces.years["${_mapYear}"]["${escH(_selProv)}"]</span></div>`);
+      const zoneCfg = (CMCAT.eduZones || {})[_selProv];
+      const head =
+        `<div class="sch-head"><h3>🏫 สถานศึกษาเดิม — ${escH(_selProv)} <span class="tag">ปี ${_mapYear}</span>` +
+        (zoneCfg ? ` <span class="muted-sm">· ${escH(zoneCfg.label)} · รวม ${fmt(total)} คน</span>` : ``) +
+        `</h3><button class="link-btn" id="schClose">✕ ปิด</button></div>`;
+
+      let body;
+      if (!schools.length) {
+        body = `<div class="sch-empty">ยังไม่มีข้อมูลสถานศึกษาเดิมของ <b>${escH(_selProv)}</b> ในปี ${_mapYear}
+          <br><span class="muted-sm">เพิ่มได้ที่ data.js → originProvinces.years["${_mapYear}"]["${escH(_selProv)}"]</span></div>`;
+      } else if (zoneCfg) {
+        body = zonedSchools(schools, zoneCfg, total);
+      } else {
+        body = flatSchools(schools, total);
+      }
+      box.innerHTML = head + body;
       const c = $("#schClose"); if (c) c.onclick = () => pick(null);
+    }
+
+    function schoolRows(list) {
+      return list.map(s => `<tr><td>${escH(s.s)}</td><td>${escH(s.a || "-")}</td>
+        <td class="num">${fmt(s.n || 0)}</td></tr>`).join("");
+    }
+    function flatSchools(schools, total) {
+      return `<div class="tbl-wrap-in"><table class="tbl"><thead><tr>
+        <th>โรงเรียน / สถานศึกษาเดิม</th><th>อำเภอ</th><th class="num">จำนวน (คน)</th></tr></thead><tbody>
+        ${schoolRows(schools)}
+        <tr class="total-row"><td>รวม ${escH(_selProv)}</td><td></td><td class="num">${fmt(total)}</td></tr>
+      </tbody></table></div>`;
+    }
+    // จัดกลุ่มโรงเรียนตามเขตพื้นที่การศึกษา (ตามอำเภอ)
+    function zonedSchools(schools, zoneCfg, total) {
+      const THNUM = n => String(n).replace(/[0-9]/g, d => "๐๑๒๓๔๕๖๗๘๙"[+d]);
+      const amp2zone = {};
+      zoneCfg.zones.forEach(zn => zn.amphoes.forEach(a => amp2zone[a] = zn.z));
+      const byZone = {}; const unknown = [];
+      schools.forEach(s => {
+        const z = amp2zone[(s.a || "").trim()];
+        if (z) (byZone[z] = byZone[z] || []).push(s);
+        else unknown.push(s);
+      });
+      const activeZones = [], emptyZones = [];
+      let html = "";
+      zoneCfg.zones.forEach(zn => {
+        const list = byZone[zn.z];
+        if (!list || !list.length) { emptyZones.push(zn.z); return; }
+        activeZones.push(zn.z);
+        const sub = list.reduce((a, s) => a + (s.n || 0), 0);
+        html += `<div class="zone-block">
+          <div class="zone-hd">
+            <span class="zone-name">เขตพื้นที่การศึกษาเขต ${THNUM(zn.z)}</span>
+            <span class="zone-amp">อ.${zn.amphoes.join(" · ")}</span>
+            <span class="zone-sub">${fmt(sub)} คน</span>
+          </div>
+          <table class="tbl mini"><tbody>${schoolRows(list.sort((a, b) => (b.n || 0) - (a.n || 0)))}</tbody></table>
+        </div>`;
+      });
+      if (unknown.length) {
+        const sub = unknown.reduce((a, s) => a + (s.n || 0), 0);
+        html += `<div class="zone-block">
+          <div class="zone-hd other"><span class="zone-name">ไม่ระบุเขต / อื่น ๆ</span>
+            <span class="zone-sub">${fmt(sub)} คน</span></div>
+          <table class="tbl mini"><tbody>${schoolRows(unknown)}</tbody></table></div>`;
+      }
+      const legend =
+        `<div class="zone-legend">
+          <span class="zl ok">✅ มีผู้สมัคร ${activeZones.length ? "เขต " + activeZones.map(THNUM).join(", ") : "-"}</span>` +
+        (emptyZones.length ? `<span class="zl no">⚪ ยังไม่มีผู้สมัคร เขต ${emptyZones.map(THNUM).join(", ")}</span>` : ``) +
+        `</div>`;
+      const foot = `<div class="zone-total">รวม ${escH(_selProv)} <b>${fmt(total)}</b> คน</div>`;
+      return legend + html + foot;
     }
   }
 
