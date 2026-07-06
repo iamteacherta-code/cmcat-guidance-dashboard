@@ -5,6 +5,8 @@
   const $ = s => document.querySelector(s);
   // นำข้อมูลที่นำเข้า (ถ้ามี) มาทับ "ก่อน" คำนวณค่าใด ๆ ด้านล่าง
   if (typeof Tools !== "undefined") Tools.applyOverride();
+  // เผยแพร่เวอร์ชันข้อมูลของไฟล์ให้ตัวโหลดคลาวด์ใช้เทียบ (กันข้อมูลคลาวด์เก่าค้าง)
+  window.__fileDataVersion = (typeof CMCAT !== "undefined" && CMCAT.dataVersion) || 0;
   const fmt = Chart.fmt;
   const C = { study: "#2e7d32", work: "#0277bd", seek: "#ef6c00", other: "#9e9e9e",
               pvc: "#2e7d32", pvs: "#66bb6a", direct: "#0277bd", online: "#f9a825" };

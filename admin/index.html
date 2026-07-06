@@ -171,10 +171,16 @@ setPersistence(auth, browserLocalPersistence).finally(()=>{
 });
 
 async function loadData(){
-  let base = JSON.parse(JSON.stringify(window.CMCAT_DEFAULTS));
+  const defaults = JSON.parse(JSON.stringify(window.CMCAT_DEFAULTS));
+  let base = defaults;
   try{
     const snap = await getDoc(doc(db,"config","dashboard"));
-    if(snap.exists() && snap.data().json) base = JSON.parse(snap.data().json);
+    if(snap.exists() && snap.data().json){
+      const cloud = JSON.parse(snap.data().json);
+      // ใช้ข้อมูลคลาวด์เฉพาะเมื่อไม่เก่ากว่าไฟล์ระบบ (ไม่งั้นเริ่มจากไฟล์ล่าสุด)
+      if((cloud.dataVersion||0) >= (defaults.dataVersion||0)) base = cloud;
+      else console.info("ข้อมูลคลาวด์เก่ากว่าไฟล์ — เริ่มจากข้อมูลระบบล่าสุด (กด บันทึก เพื่ออัปเดตคลาวด์)");
+    }
   }catch(e){ console.warn("โหลดข้อมูลคลาวด์ไม่ได้ ใช้ค่าเริ่มต้น",e); }
   work = base;
   renderAll();

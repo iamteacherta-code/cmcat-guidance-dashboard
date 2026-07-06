@@ -185,8 +185,13 @@
           if (!snap.exists() || !window.__setDashboardData) return;
           const raw = snap.data().json;
           if (!raw) return;
-          try { window.__setDashboardData(JSON.parse(raw)); }
-          catch (e) { console.warn("ข้อมูลคลาวด์อ่านไม่ได้:", e); }
+          try {
+            const cloud = JSON.parse(raw);
+            // ใช้ข้อมูลคลาวด์เฉพาะเมื่อเวอร์ชันไม่เก่ากว่าไฟล์ (กันข้อมูลเก่าค้างมาทับของใหม่)
+            if ((cloud.dataVersion || 0) >= (window.__fileDataVersion || 0))
+              window.__setDashboardData(cloud);
+            else console.info("ข้ามข้อมูลคลาวด์ (เวอร์ชันเก่ากว่าไฟล์) — ใช้ข้อมูลล่าสุดจากระบบ");
+          } catch (e) { console.warn("ข้อมูลคลาวด์อ่านไม่ได้:", e); }
         },
         err => console.warn("อ่านข้อมูลคลาวด์ไม่สำเร็จ:", err && err.code));
     } catch (e) { console.warn("เริ่ม Firebase ไม่สำเร็จ:", e); }
