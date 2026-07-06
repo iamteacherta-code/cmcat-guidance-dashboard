@@ -227,25 +227,23 @@
     }
 
     function schoolRows(list) {
-      return list.map(s => `<tr><td>${escH(s.s)}</td><td>${escH(s.a || "-")}</td>
+      return list.map(s => `<tr><td>${escH(s.s)}</td>
         <td class="num">${fmt(s.n || 0)}</td></tr>`).join("");
     }
     function flatSchools(schools, total) {
       return `<div class="tbl-wrap-in"><table class="tbl"><thead><tr>
-        <th>โรงเรียน / สถานศึกษาเดิม</th><th>อำเภอ</th><th class="num">จำนวน (คน)</th></tr></thead><tbody>
+        <th>โรงเรียน / สถานศึกษาเดิม</th><th class="num">จำนวน (คน)</th></tr></thead><tbody>
         ${schoolRows(schools)}
-        <tr class="total-row"><td>รวม ${escH(_selProv)}</td><td></td><td class="num">${fmt(total)}</td></tr>
+        <tr class="total-row"><td>รวม ${escH(_selProv)}</td><td class="num">${fmt(total)}</td></tr>
       </tbody></table></div>`;
     }
-    // จัดกลุ่มโรงเรียนตามเขตพื้นที่การศึกษา (ตามอำเภอ)
+    // จัดกลุ่มโรงเรียนตามเขตพื้นที่การศึกษา (ตามค่า z ของแต่ละโรงเรียน)
     function zonedSchools(schools, zoneCfg, total) {
       const THNUM = n => String(n).replace(/[0-9]/g, d => "๐๑๒๓๔๕๖๗๘๙"[+d]);
-      const amp2zone = {};
-      zoneCfg.zones.forEach(zn => zn.amphoes.forEach(a => amp2zone[a] = zn.z));
       const byZone = {}; const unknown = [];
       schools.forEach(s => {
-        const z = amp2zone[(s.a || "").trim()];
-        if (z) (byZone[z] = byZone[z] || []).push(s);
+        const z = +s.z;
+        if (z && zoneCfg.zones.some(zn => zn.z === z)) (byZone[z] = byZone[z] || []).push(s);
         else unknown.push(s);
       });
       const activeZones = [], emptyZones = [];
@@ -279,6 +277,22 @@
       const foot = `<div class="zone-total">รวม ${escH(_selProv)} <b>${fmt(total)}</b> คน</div>`;
       return legend + html + foot;
     }
+  }
+
+  /* ========= 1.6 อันดับสถานศึกษาเดิม 10 อันดับแรก ========= */
+  function topSchoolsCard() {
+    const t = CMCAT.topSchools, box = $("#topSchools");
+    if (!box) return;
+    if (!t || !t.rows) { box.innerHTML = ""; return; }
+    const max = Math.max(1, ...t.rows.map(r => r.n));
+    box.innerHTML =
+      `<h3>🏆 10 อันดับสถานศึกษาเดิมที่ส่งนักเรียนมามากที่สุด (ปี ${t.year})</h3>` +
+      t.rows.map(r => `<div class="top-row">
+        <span class="top-rank r${r.r <= 3 ? r.r : 'x'}">${r.r}</span>
+        <span class="top-name">${escH(r.s)}</span>
+        <span class="top-track"><span class="top-fill" style="width:${r.n / max * 100}%"></span></span>
+        <span class="top-n">${fmt(r.n)} คน</span></div>`).join("") +
+      (t.note ? `<p class="muted-sm" style="margin-top:10px">${escH(t.note)}</p>` : "");
   }
 
   /* ================= 2. จำนวนนักเรียน ================= */
@@ -492,7 +506,7 @@
     $("#deptName").textContent = CMCAT.meta.department;
     $("#updated").textContent = "ข้อมูลล่าสุด: " + CMCAT.meta.updated;
     $("#sourceFoot").textContent = "แหล่งข้อมูล: " + CMCAT.meta.source;
-    overview(); originMap(); enrollment(); admission(); survey(); graduates(); staff(); analysis();
+    overview(); originMap(); topSchoolsCard(); enrollment(); admission(); survey(); graduates(); staff(); analysis();
   }
 
   /* ================= init ================= */

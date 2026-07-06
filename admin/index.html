@@ -93,6 +93,7 @@ input:focus,select,textarea:focus{outline:none;border-color:var(--green-l)}
     <div><h1>แก้ไขข้อมูลแดชบอร์ด</h1><div class="sub">แก้แล้วเผยแพร่สู่หน้าเว็บทันที (เรียลไทม์)</div></div>
     <div class="spacer"></div>
     <a href="../" target="_blank">🔗 เปิดแดชบอร์ด</a>
+    <button id="btnReset" title="โหลดข้อมูลชุดล่าสุดจากไฟล์ระบบ (แทนที่ที่กำลังแก้อยู่)">↺ โหลดข้อมูลระบบ</button>
     <button id="btnLogout">ออกจากระบบ</button>
     <button class="save" id="btnSaveTop">💾 บันทึก & เผยแพร่</button>
   </div>
@@ -103,6 +104,7 @@ input:focus,select,textarea:focus{outline:none;border-color:var(--green-l)}
     <button data-tab="adm">รับสมัคร</button>
     <button data-tab="survey">แบบสำรวจ</button>
     <button data-tab="map">แผนที่/สถานศึกษา</button>
+    <button data-tab="top">10 อันดับ</button>
     <button data-tab="grad">ภาวะผู้จบ</button>
     <button data-tab="staff">ผู้ปฏิบัติงาน</button>
   </div>
@@ -113,6 +115,7 @@ input:focus,select,textarea:focus{outline:none;border-color:var(--green-l)}
     <div class="view" id="view-adm"></div>
     <div class="view" id="view-survey"></div>
     <div class="view" id="view-map"></div>
+    <div class="view" id="view-top"></div>
     <div class="view" id="view-grad"></div>
     <div class="view" id="view-staff"></div>
   </main>
@@ -202,7 +205,19 @@ function fld(label, obj, key, type="text"){
 }
 
 /* ---------- เรนเดอร์แต่ละแท็บ ---------- */
-function renderAll(){ meta(); enroll(); adm(); survey(); mapEd(); grad(); staff(); }
+function renderAll(){ meta(); enroll(); adm(); survey(); mapEd(); topEd(); grad(); staff(); }
+
+function topEd(){
+  if(!work.topSchools) work.topSchools={year:2569,rows:[],note:""};
+  const t=work.topSchools;
+  const v=$("view-top"); v.innerHTML=`<div class="card"><h3>10 อันดับสถานศึกษาเดิม (ส่งนักเรียนมากที่สุด)</h3>
+    <p class="hint">อันดับ · ชื่อโรงเรียน · จำนวนคน (แสดงในหน้าภาพรวม)</p>
+    <div id="gTop"></div><div class="sub-h">หมายเหตุ (ท้ายตาราง)</div><div id="topNote"></div></div>`;
+  grid($("gTop"), t.rows,
+    [{k:"r",label:"อันดับ",type:"num"},{k:"s",label:"ชื่อสถานศึกษา"},{k:"n",label:"จำนวน",type:"num"}],
+    ()=>({r:(t.rows.length+1),s:"",n:0}));
+  $("topNote").append(fld("", t, "note", "area"));
+}
 
 function meta(){
   const v=$("view-meta"); v.innerHTML=`<div class="card"><h3>ข้อมูลทั่วไป</h3>
@@ -274,8 +289,8 @@ function mapEd(){
   refreshSel(curProv);
   const drawSchools=()=>{
     grid($("mSchools"), yd[curProv],
-      [{k:"s",label:"โรงเรียน/สถานศึกษาเดิม"},{k:"a",label:"อำเภอ"},{k:"n",label:"จำนวน",type:"num"}],
-      ()=>({s:"",a:"",n:0}));
+      [{k:"s",label:"โรงเรียน/สถานศึกษาเดิม"},{k:"z",label:"เขต (1-6 เฉพาะ ชม./มส.)",type:"num"},{k:"n",label:"จำนวน",type:"num"}],
+      ()=>({s:"",z:0,n:0}));
   };
   sel.onchange=()=>{
     const val=sel.value;
@@ -330,6 +345,11 @@ async function save(){
   finally{ btns.forEach(b=>b.disabled=false); $("btnSave").textContent="💾 บันทึก & เผยแพร่สู่แดชบอร์ด"; }
 }
 $("btnSave").onclick=save; $("btnSaveTop").onclick=save;
+$("btnReset").onclick=()=>{
+  if(!confirm("โหลดข้อมูลชุดล่าสุดจากไฟล์ระบบ? จะแทนที่ข้อมูลที่กำลังแก้อยู่ทั้งหมด\n(หลังโหลดแล้วกด 'บันทึก & เผยแพร่' เพื่อยืนยันขึ้นคลาวด์)"))return;
+  work=JSON.parse(JSON.stringify(window.CMCAT_DEFAULTS)); renderAll();
+  toast("↺ โหลดข้อมูลระบบล่าสุดแล้ว — กด 'บันทึก & เผยแพร่' เพื่อยืนยัน");
+};
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
 
 // ทดสอบ UI เฉพาะตอนรันในเครื่อง (localhost) — ปิดใช้งานบนเว็บจริง เพราะบันทึกต้องผ่าน Firestore ที่ต้องล็อกอินอยู่ดี

@@ -80,6 +80,7 @@
         <div class="card" id="originList"></div>
       </div>
       <div class="card" id="schoolPanel"></div>
+      <div class="card" id="topSchools"></div>
     </section>
 
     <!-- 2 จำนวนนักเรียน -->
@@ -177,6 +178,7 @@
       appId: "1:890130087145:web:ad436b2f915a436e92c478"
     };
     try {
+      if (location.search.includes("nocloud")) throw new Error("ข้ามคลาวด์ (โหมดทดสอบไฟล์)");
       const db = getFirestore(initializeApp(firebaseConfig));
       onSnapshot(doc(db, "config", "dashboard"),
         snap => {
