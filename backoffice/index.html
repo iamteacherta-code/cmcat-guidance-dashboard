@@ -189,6 +189,7 @@ tbody tr:hover{background:var(--green-bg)}
       <div class="ctrl">
         <input type="search" class="search" id="regSearch" placeholder="🔍 ค้นหา ชื่อ / รหัส / สาขา"/>
         <select id="regLevel"><option value="">ทุกระดับชั้น</option></select>
+        <select id="regRoom"><option value="">ทุกห้องเรียน/กลุ่ม</option></select>
         <select id="regCare">
           <option value="">ทุกระดับการดูแล</option>
           <option value="1">1 ปกติ</option><option value="2">2 เฝ้าระวัง</option>
@@ -201,6 +202,11 @@ tbody tr:hover{background:var(--green-bg)}
     <section class="view" id="view-care">
       <div class="note">❤️ <b>ระดับการดูแลและแนะนำนักศึกษา</b> — จัดกลุ่มนักเรียนตามระดับการดูแล
         เพื่อวางแผนช่วยเหลือ คลิกที่ชื่อเพื่อบันทึกการให้คำปรึกษา/แก้ไขระดับ</div>
+      <div class="ctrl">
+        <input type="search" class="search" id="careSearch" placeholder="🔍 ค้นหาชื่อ / รหัส"/>
+        <select id="careLevel"><option value="">ทุกระดับชั้น</option></select>
+        <select id="careRoom"><option value="">ทุกห้องเรียน/กลุ่ม</option></select>
+      </div>
       <div class="care-cols" id="careCols"></div>
     </section>
     <section class="view" id="view-data">
@@ -378,6 +384,7 @@ const App = {
     $("view-"+t).classList.add("active"); this.refresh();
   },
   refresh(){ if($("app").classList.contains("hidden"))return;
+    fillRoomFilters();
     if(this.cur==="dash")Dash.render(); if(this.cur==="reg")Reg.render(); if(this.cur==="care")Care.render(); }
 };
 
@@ -410,36 +417,57 @@ const Dash = { render(){
   bindOpens($("view-dash"));
 }};
 
+/* ---- เติมตัวเลือกห้องเรียน/กลุ่ม จากข้อมูลจริง (คงค่าที่เลือกไว้) ---- */
+function fillRoomFilters(){
+  const rooms=[...new Set(DB.students.map(s=>(s.room||"").trim()).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,"th"));
+  ["regRoom","careRoom"].forEach(id=>{
+    const sel=$(id); if(!sel)return; const cur=sel.value;
+    sel.innerHTML='<option value="">ทุกห้องเรียน/กลุ่ม</option>'+rooms.map(r=>`<option>${esc(r)}</option>`).join("");
+    if(rooms.includes(cur))sel.value=cur;
+  });
+  const cl=$("careLevel"); if(cl){ const cur=cl.value;
+    cl.innerHTML='<option value="">ทุกระดับชั้น</option>'+LEVELS.map(v=>`<option>${esc(v)}</option>`).join("");
+    if(LEVELS.includes(cur))cl.value=cur; }
+}
+
 /* ================= REGISTRY ================= */
 const Reg = { render(){
-  const q=($("regSearch").value||"").trim().toLowerCase(), fl=$("regLevel").value, fc=$("regCare").value;
+  const q=($("regSearch").value||"").trim().toLowerCase(), fl=$("regLevel").value, fc=$("regCare").value, fr=$("regRoom").value;
   const list=DB.students.filter(s=>{
-    if(fl&&s.level!==fl)return false; if(fc&&+s.care!==+fc)return false;
-    if(q){const h=((s.code||"")+" "+(s.first||"")+" "+(s.last||"")+" "+(s.major||"")+" "+(s.level||"")).toLowerCase(); if(!h.includes(q))return false;}
+    if(fl&&s.level!==fl)return false; if(fc&&+s.care!==+fc)return false; if(fr&&(s.room||"").trim()!==fr)return false;
+    if(q){const h=((s.code||"")+" "+(s.first||"")+" "+(s.last||"")+" "+(s.major||"")+" "+(s.level||"")+" "+(s.room||"")).toLowerCase(); if(!h.includes(q))return false;}
     return true;
-  }).sort((a,b)=>(a.level||"").localeCompare(b.level||"","th")||(a.first||"").localeCompare(b.first||"","th"));
+  }).sort((a,b)=>(a.level||"").localeCompare(b.level||"","th")||(a.room||"").localeCompare(b.room||"","th")||(a.first||"").localeCompare(b.first||"","th"));
   const box=$("regTable");
   if(!DB.students.length){box.innerHTML=`<div class="tbl-wrap"><div class="empty"><div class="big">📋</div>
     ยังไม่มีข้อมูลนักเรียน<br><br><button class="btn" id="btnAdd2">+ เพิ่มนักเรียนคนแรก</button></div></div>`;
     $("btnAdd2").onclick=()=>Student.open();return;}
   box.innerHTML=`<div style="font-size:.82rem;color:var(--muted);margin-bottom:8px">พบ ${list.length} คน</div>
-    <div class="tbl-wrap"><table><thead><tr><th>รหัส</th><th>ชื่อ-สกุล</th><th>ระดับชั้น</th><th>สาขา</th><th>การดูแล</th><th>เบอร์โทร</th><th></th></tr></thead>
+    <div class="tbl-wrap"><table><thead><tr><th>รหัส</th><th>ชื่อ-สกุล</th><th>ระดับชั้น</th><th>ห้อง/กลุ่ม</th><th>สาขา</th><th>การดูแล</th><th></th></tr></thead>
     <tbody>${list.map(s=>`<tr>
       <td>${esc(s.code||"-")}</td><td><b>${esc(s.prefix||"")}${esc(s.first)} ${esc(s.last)}</b></td>
-      <td>${esc(s.level||"-")}${s.room?" /"+esc(s.room):""}</td><td>${esc(s.major||"-")}</td>
+      <td>${esc(s.level||"-")}</td><td>${esc(s.room||"-")}</td><td>${esc(s.major||"-")}</td>
       <td><span class="care l${s.care||1}"><span class="dot l${s.care||1}"></span>${s.care||1} ${CARE[s.care||1]}</span></td>
-      <td>${esc(s.phone||"-")}</td><td><span class="link" data-open="${s.id}">แก้ไข</span></td></tr>`).join("")}</tbody></table></div>`;
+      <td><span class="link" data-open="${s.id}">แก้ไข</span></td></tr>`).join("")}</tbody></table></div>`;
   bindOpens(box);
 }};
 
 /* ================= CARE ================= */
 const Care = { render(){
+  const q=($("careSearch").value||"").trim().toLowerCase(), fl=$("careLevel").value, fr=$("careRoom").value;
+  const match=s=>{
+    if(fl&&s.level!==fl)return false; if(fr&&(s.room||"").trim()!==fr)return false;
+    if(q){const h=((s.code||"")+" "+(s.first||"")+" "+(s.last||"")).toLowerCase(); if(!h.includes(q))return false;}
+    return true;
+  };
+  const base=DB.students.filter(match);
   $("careCols").innerHTML=[1,2,3,4].map(l=>{
-    const list=DB.students.filter(s=>+(s.care||1)===l);
+    const list=base.filter(s=>+(s.care||1)===l);
     return `<div class="care-col l${l}"><div class="hd"><span>${l} · ${CARE[l]}</span><span>${list.length}</span></div>
       <div class="bd">${list.length?list.map(s=>`<div class="scard" data-open="${s.id}">
         <div class="nm">${esc(s.prefix||"")}${esc(s.first)} ${esc(s.last)}</div>
-        <div class="mt">${esc(s.level||"")} · ${esc(s.major||"")}</div>
+        <div class="mt">${esc(s.level||"")}${s.room?" · "+esc(s.room):""}</div>
         ${(s.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`).join("")
         :'<div style="font-size:.8rem;color:var(--muted);padding:10px;text-align:center">—</div>'}</div></div>`;
   }).join("");
@@ -577,6 +605,8 @@ $("gatePass").addEventListener("keydown",e=>{if(e.key==="Enter")Gate.submit();})
 $("btnLogout").onclick=()=>Gate.logout();
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>App.tab(b.dataset.tab));
 $("regSearch").oninput=()=>Reg.render(); $("regLevel").onchange=()=>Reg.render(); $("regCare").onchange=()=>Reg.render();
+$("regRoom").onchange=()=>Reg.render();
+$("careSearch").oninput=()=>Care.render(); $("careLevel").onchange=()=>Care.render(); $("careRoom").onchange=()=>Care.render();
 $("btnAdd").onclick=()=>Student.open();
 $("mClose").onclick=()=>Student.close(); $("mCancel").onclick=()=>Student.close();
 $("mSave").onclick=()=>Student.save(); $("mDelete").onclick=()=>Student.remove();
