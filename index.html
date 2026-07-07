@@ -68,7 +68,7 @@
       <p id="overviewNote" class="callout"></p>
 
       <div class="map-head">
-        <h3 class="map-title">🗺️ แผนที่ต้นทางนักศึกษาใหม่ — สถานศึกษาเดิมมาจากจังหวัดใดในภาคเหนือ</h3>
+        <h3 class="map-title">🗺️ แผนที่ต้นทางนักศึกษาใหม่ — สถานศึกษาเดิมมาจากจังหวัดใด (ทั่วประเทศ)</h3>
         <div class="year-pick"><label>ปีการศึกษา:</label><select id="mapYear"></select></div>
       </div>
       <p class="sub" id="mapSub"></p>
@@ -180,7 +180,8 @@
     try {
       if (location.search.includes("nocloud")) throw new Error("ข้ามคลาวด์ (โหมดทดสอบไฟล์)");
       const db = getFirestore(initializeApp(firebaseConfig));
-      onSnapshot(doc(db, "config", "dashboard"),
+      let unsub = null;
+      unsub = onSnapshot(doc(db, "config", "dashboard"),
         snap => {
           if (!snap.exists() || !window.__setDashboardData) return;
           const raw = snap.data().json;
@@ -193,7 +194,11 @@
             else console.info("ข้ามข้อมูลคลาวด์ (เวอร์ชันเก่ากว่าไฟล์) — ใช้ข้อมูลล่าสุดจากระบบ");
           } catch (e) { console.warn("ข้อมูลคลาวด์อ่านไม่ได้:", e); }
         },
-        err => console.warn("อ่านข้อมูลคลาวด์ไม่สำเร็จ:", err && err.code));
+        err => {
+          // ถ้าสิทธิ์อ่านคลาวด์ไม่พอ (ยังไม่เปิด public read) ให้หยุดพยายาม แล้วใช้ข้อมูลจากไฟล์
+          if (unsub) unsub();
+          console.info("แดชบอร์ดใช้ข้อมูลจากไฟล์ระบบ (คลาวด์: " + (err && err.code) + ")");
+        });
     } catch (e) { console.warn("เริ่ม Firebase ไม่สำเร็จ:", e); }
   </script>
 </body>

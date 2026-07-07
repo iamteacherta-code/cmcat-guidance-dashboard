@@ -47,14 +47,16 @@
     const cur = enr[enr.length - 1], first = enr[0], prev = enr[enr.length - 2];
     const dropPct = Math.round((first.total - cur.total) / first.total * 100);
     const yoyPct = Math.round((cur.total - prev.total) / prev.total * 100);
-    const g = gradTotals(2567); // ปีล่าสุดที่สรุปสมบูรณ์
+    const gy = gradYears[gradYears.length - 1]; // ปีล่าสุดที่มีข้อมูลผู้จบ (อัตโนมัติ)
+    const g = gradTotals(gy);
     const successRate = Math.round((g.study + g.work) / g.tracked * 100);
+    const svLv = CMCAT.survey.level;
 
     const cards = [
       { big: fmt(cur.total), cap: `นักเรียน–นักศึกษาในระบบ ปี ${cur.year}`, sub: `${yoyPct}% เทียบปีก่อน`, tone: "down" },
       { big: fmt(reportedTotal), cap: "รายงานตัวเข้าเรียนใหม่ ปี 2569", sub: `จากผู้สมัคร ${fmt(applied.all)} คน`, tone: "info" },
-      { big: fmt(CMCAT.survey.total), cap: "ผู้ตอบแบบสำรวจการตัดสินใจ", sub: `ปวช. ${CMCAT.survey.level[0].value} · ปวส. ${CMCAT.survey.level[1].value}`, tone: "info" },
-      { big: successRate + "%", cap: "ผู้จบ ปี 2567 ศึกษาต่อ/มีงานทำ", sub: `ติดตามได้ ${fmt(g.tracked)} คน`, tone: "up" }
+      { big: fmt(CMCAT.survey.total), cap: "ผู้ตอบแบบสำรวจการตัดสินใจ", sub: `${svLv[0].label} ${svLv[0].value} · ${svLv[1] ? svLv[1].label + " " + svLv[1].value : ""}`, tone: "info" },
+      { big: successRate + "%", cap: `ผู้จบ ปี ${gy} ศึกษาต่อ/มีงานทำ`, sub: `ติดตามได้ ${fmt(g.tracked)} คน`, tone: "up" }
     ];
     $("#kpis").innerHTML = cards.map(c => `
       <div class="kpi kpi-${c.tone}">
@@ -119,20 +121,22 @@
 
       $("#mapSub").innerHTML = `${cfg.note} · ปีการศึกษา ${_mapYear} ` +
         `<span class="muted-sm">(รวม ${fmt(grand)} คน` +
-        (outside ? ` · นอกภาคเหนือ ${fmt(outside)} คน` : "") + `)</span>`;
+        (outside ? ` · ไม่ระบุจังหวัด ${fmt(outside)} คน` : "") + `)</span>`;
 
-      // ---- SVG map ----
+      // ---- SVG map (ทั่วประเทศ) ----
       const M = NORTH_MAP;
-      let s = `<svg viewBox="${M.viewBox}" class="north-map" role="img" aria-label="แผนที่ภาคเหนือ">`;
+      let s = `<svg viewBox="${M.viewBox}" class="north-map" role="img" aria-label="แผนที่ประเทศไทย">`;
       M.provinces.forEach(p => {
         const v = tot[p.name] || 0, pct = Math.round(v / grand * 100);
-        s += `<path d="${p.d}" class="prov" fill="${provColor(v, max)}" ` +
+        s += `<path d="${p.d}" class="prov${v ? '' : ' nodata'}" fill="${provColor(v, max)}" ` +
           `data-name="${escH(p.name)}" data-v="${v}" data-pct="${pct}"></path>`;
       });
+      // ป้ายชื่อ+จำนวน เฉพาะจังหวัดที่มีข้อมูล (กันรก)
       M.provinces.forEach(p => {
         const v = tot[p.name] || 0;
+        if (!v) return;
         s += `<text x="${p.c[0]}" y="${p.c[1] - 2}" class="prov-lb">${p.name}</text>`;
-        if (v) s += `<text x="${p.c[0]}" y="${p.c[1] + 12}" class="prov-ct">${fmt(v)}</text>`;
+        s += `<text x="${p.c[0]}" y="${p.c[1] + 12}" class="prov-ct">${fmt(v)}</text>`;
       });
       s += `</svg>`;
       $("#originMapSvg").innerHTML = s;
