@@ -214,9 +214,9 @@
         snap => {
           const box = document.getElementById("deptDocs"); if (!box) return;
           const docs = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => String(b.date || b.id).localeCompare(String(a.date || a.id)));
-          box.innerHTML = docs.length ? docs.map(d => `<a class="doc-card" href="${d.data}" target="_blank" rel="noopener" download="${esc(d.name)}">
-            <span class="di">${icon(d.type || d.name)}</span><span class="dn">${esc(d.name)}</span>
-            <span class="dm">${((d.size || 0) / 1024).toFixed(0)} KB</span></a>`).join("")
+          box.innerHTML = docs.length ? docs.map(d => `<a class="doc-card" href="${esc(d.url || d.data)}" target="_blank" rel="noopener">
+            <span class="di">${d.url ? "🔗" : icon(d.type || d.name)}</span><span class="dn">${esc(d.name)}</span>
+            <span class="dm">${d.url ? "เปิดลิงก์" : ((d.size || 0) / 1024).toFixed(0) + " KB"}</span></a>`).join("")
             : `<p class="muted-sm">ยังไม่มีเอกสารเผยแพร่จากฝ่าย</p>`;
         },
         err => console.info("เอกสารฝ่าย: " + (err && err.code)));
