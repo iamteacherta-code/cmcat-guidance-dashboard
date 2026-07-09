@@ -34,6 +34,7 @@
     <a href="#graduates">ภาวะผู้จบ</a>
     <a href="#staff">ผู้ปฏิบัติงาน</a>
     <a href="#analysis">วิเคราะห์เพื่ออนาคต</a>
+    <a href="#documents">เอกสารฝ่าย</a>
   </nav>
 
   <div class="toolbar">
@@ -150,6 +151,13 @@
       <p id="projText" class="callout projection"></p>
       <div id="swot" class="swot-grid"></div>
     </section>
+
+    <!-- 8 เอกสารสำคัญของฝ่าย -->
+    <section id="documents" class="panel">
+      <h2><span class="num-badge">8</span> เอกสารสำคัญของฝ่าย</h2>
+      <p class="sub">เอกสาร ประกาศ แบบฟอร์ม และคู่มือของงานแนะแนว — คลิกเพื่อเปิด/ดาวน์โหลด</p>
+      <div id="deptDocs" class="docs-grid"><p class="muted-sm">กำลังโหลด…</p></div>
+    </section>
   </main>
 
   <footer class="foot">
@@ -168,7 +176,7 @@
   <!-- ดึงข้อมูลสดจากคลาวด์ (Firebase) — อ่านอย่างเดียว ไม่ต้องล็อกอิน -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
     const firebaseConfig = {
       apiKey: "AIzaSyBsXC2CMoj-SBqydxOxjIg2MllLEFilsDg",
       authDomain: "cmcat-guidance.firebaseapp.com",
@@ -199,6 +207,19 @@
           if (unsub) unsub();
           console.info("แดชบอร์ดใช้ข้อมูลจากไฟล์ระบบ (คลาวด์: " + (err && err.code) + ")");
         });
+      // เอกสารสำคัญของฝ่าย (สาธารณะ)
+      const icon = t => /pdf/i.test(t) ? "📄" : /image/i.test(t) ? "🖼️" : /word|document/i.test(t) ? "📝" : /sheet|excel|csv/i.test(t) ? "📊" : "📎";
+      const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+      onSnapshot(query(collection(db, "config"), where("kind", "==", "document")),
+        snap => {
+          const box = document.getElementById("deptDocs"); if (!box) return;
+          const docs = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => String(b.date || b.id).localeCompare(String(a.date || a.id)));
+          box.innerHTML = docs.length ? docs.map(d => `<a class="doc-card" href="${d.data}" target="_blank" rel="noopener" download="${esc(d.name)}">
+            <span class="di">${icon(d.type || d.name)}</span><span class="dn">${esc(d.name)}</span>
+            <span class="dm">${((d.size || 0) / 1024).toFixed(0)} KB</span></a>`).join("")
+            : `<p class="muted-sm">ยังไม่มีเอกสารเผยแพร่จากฝ่าย</p>`;
+        },
+        err => console.info("เอกสารฝ่าย: " + (err && err.code)));
     } catch (e) { console.warn("เริ่ม Firebase ไม่สำเร็จ:", e); }
   </script>
 </body>

@@ -259,6 +259,16 @@ table.tbl.mini tr:last-child td{border-bottom:none}
 .swot-risk{background:#fff3e0;border-color:#ffcc80}
 .swot-action{background:#e3f2fd;border-color:#90caf9}
 
+/* ---------- เอกสารฝ่าย ---------- */
+.docs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.doc-card{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);text-decoration:none;color:var(--ink);
+  transition:.15s;border-left:4px solid var(--gold)}
+.doc-card:hover{background:var(--green-bg);transform:translateY(-1px)}
+.doc-card .di{font-size:1.8rem;flex:none}
+.doc-card .dn{flex:1;font-weight:600;font-size:.9rem;word-break:break-word;line-height:1.3}
+.doc-card .dm{font-size:.74rem;color:var(--muted);flex:none}
+
 /* ---------- footer ---------- */
 .foot{text-align:center;color:var(--muted);font-size:.82rem;padding:24px 18px;
   border-top:1px solid var(--line);background:#fff}
