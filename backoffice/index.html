@@ -211,17 +211,17 @@ tbody tr:hover{background:var(--green-bg)}
     </section>
     <section class="view" id="view-data">
       <div class="panel" style="border:1px solid var(--green-l)">
-        <h3>📥 นำเข้ารายชื่อนักศึกษา (Excel / CSV)</h3>
-        <p style="font-size:.86rem;color:var(--muted);margin-top:0">อัปโหลดไฟล์รายชื่อนักศึกษาปี 2569 เข้าระบบได้เลย
-          รองรับ <b>.xlsx / .xls / .csv</b> — ระบบจะจับคู่คอลัมน์อัตโนมัติจากหัวตาราง
-          (เช่น รหัส, ชื่อ, นามสกุล, ระดับชั้น, สาขา, เบอร์โทร)</p>
+        <h3>📥 นำเข้ารายชื่อนักศึกษา (PDF / Excel / CSV)</h3>
+        <p style="font-size:.86rem;color:var(--muted);margin-top:0">อัปโหลดไฟล์รายชื่อนักศึกษาเข้าระบบได้เลย
+          รองรับ <b>PDF ทะเบียน (วษท.เชียงใหม่) · .xlsx · .xls · .csv</b> — ระบบอ่านและแก้อักขระไทยให้อัตโนมัติ
+          พร้อมจับคู่คอลัมน์เอง (รหัส, ชื่อ, นามสกุล, ระดับชั้น, สาขา, ห้อง)</p>
         <div class="row">
-          <button class="btn" id="btnImpSheet">📥 เลือกไฟล์รายชื่อ (Excel/CSV)</button>
-          <input type="file" id="impSheetFile" accept=".xlsx,.xls,.csv" hidden/>
+          <button class="btn" id="btnImpSheet">📥 เลือกไฟล์รายชื่อ (PDF/Excel/CSV)</button>
+          <input type="file" id="impSheetFile" accept=".pdf,.xlsx,.xls,.csv" hidden/>
           <button class="btn sec" id="btnTemplate">⬇️ ดาวน์โหลดไฟล์ต้นแบบ (Template)</button>
         </div>
-        <p style="font-size:.78rem;color:var(--muted);margin-top:10px">💡 ถ้าไฟล์มีคอลัมน์ “ชื่อ-สกุล” รวมกัน
-          ระบบจะแยกชื่อ/นามสกุลให้อัตโนมัติ · หัวตารางควรอยู่แถวแรกสุด</p>
+        <p style="font-size:.78rem;color:var(--muted);margin-top:10px">💡 <b>ไฟล์ PDF ทะเบียน</b> อัปโหลดได้เลยไม่ต้องแปลง (ตั้งชื่อไฟล์ให้มีระดับชั้น เช่น “ปวช.1” ระบบจะกรอกระดับชั้นให้) ·
+          ไฟล์ Excel/CSV ที่มีคอลัมน์ “ชื่อ-สกุล” รวมกัน ระบบจะแยกชื่อ/นามสกุลให้อัตโนมัติ</p>
       </div>
       <div class="panel">
         <h3>💾 สำรอง & ส่งออกข้อมูล</h3>
@@ -291,8 +291,10 @@ tbody tr:hover{background:var(--green-bg)}
   </div>
 </div>
 
-<!-- ไลบรารีอ่านไฟล์ Excel/CSV (SheetJS) -->
+<!-- ไลบรารีอ่านไฟล์ Excel/CSV (SheetJS) + PDF (PDF.js) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence }
@@ -449,7 +451,7 @@ const Reg = { render(){
       <td>${esc(s.code||"-")}</td><td><b>${esc(s.prefix||"")}${esc(s.first)} ${esc(s.last)}</b></td>
       <td>${esc(s.level||"-")}</td><td>${esc(s.room||"-")}</td><td>${esc(s.major||"-")}</td>
       <td><span class="care l${s.care||1}"><span class="dot l${s.care||1}"></span>${s.care||1} ${CARE[s.care||1]}</span></td>
-      <td><span class="link" data-open="${s.id}">แก้ไข</span></td></tr>`).join("")}</tbody></table></div>`;
+      <td><span class="link" data-open="${s.id}">บันทึกจากครู</span></td></tr>`).join("")}</tbody></table></div>`;
   bindOpens(box);
 }};
 
@@ -590,12 +592,58 @@ const Data = {
         care:1, tags:[], note:"", logs:[], updatedAt:todayTH() };
     }).filter(s=>s.first||s.code);
     if(!students.length){ alert("ไม่พบชื่อนักเรียนในไฟล์ (ต้องมีคอลัมน์ 'ชื่อ' หรือ 'ชื่อ-สกุล')"); return; }
-    const found=Object.entries(map).filter(([k,v])=>v).map(([k,v])=>`• ${k} ← “${v}”`).join("\n");
-    if(!confirm(`พบ ${students.length} รายชื่อ\n\nจับคู่คอลัมน์ได้:\n${found}\n\nอัปโหลดขึ้นคลาวด์เลยไหม? (เพิ่มต่อจากที่มีอยู่)`))return;
+    const found="จับคู่คอลัมน์ได้:\n"+Object.entries(map).filter(([k,v])=>v).map(([k,v])=>`• ${k} ← “${v}”`).join("\n");
+    await this.uploadStudents(students, found);
+  },
+  async uploadStudents(students, found){
+    if(!confirm(`พบ ${students.length} รายชื่อ\n\n${found||""}\n\nอัปโหลดขึ้นคลาวด์เลยไหม? (เพิ่มต่อจากที่มีอยู่)`))return;
     let ok=0, fail=0;
     for(const s of students){ const id=doc(collection(db,"students")).id;
       try{ await setDoc(doc(db,"students",id),s); ok++; }catch(e){ fail++; console.error(e); } }
     alert(`อัปโหลดสำเร็จ ${ok} รายชื่อ`+(fail?` (ล้มเหลว ${fail})`:" ✓"));
+  },
+  // นำเข้ารายชื่อจาก PDF ทะเบียน (อ่าน+แก้อักขระในเบราว์เซอร์)
+  async importPDF(file){
+    if(typeof pdfjsLib==="undefined"){ alert("ไลบรารีอ่าน PDF ยังโหลดไม่เสร็จ กรุณาลองใหม่"); return; }
+    const MAP={0xF70A:"่",0xF70B:"้",0xF706:"้",0xF70E:"์",0xF709:"์",0xF702:"ี",0xF701:"ิ",
+      0xF710:"ั",0xF716:"ั",0xF714:"ี",0xF70C:"๊",0xF70D:"๋",0xF712:"็",0xF705:"่",0xF713:"ื",0xF704:"่",0xF70F:""};
+    const MARKS=new Set([0x0E31,0x0E34,0x0E35,0x0E36,0x0E37,0x0E38,0x0E39,0x0E3A,0x0E47,0x0E48,0x0E49,0x0E4A,0x0E4B,0x0E4C,0x0E4D,0x0E4E]);
+    const norm=s=>{ let o="";for(const ch of s){const cp=ch.codePointAt(0);o+=(cp in MAP)?MAP[cp]:ch;} o=o.replace(/ํา/g,"ำ");
+      let r="";for(let i=0;i<o.length;i++){ if(i>0&&o[i]===o[i-1]&&MARKS.has(o.codePointAt(i)))continue; r+=o[i]; } return r; };
+    let lines=[];
+    try{
+      const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+      for(let p=1;p<=pdf.numPages;p++){
+        const tc=await (await pdf.getPage(p)).getTextContent();
+        const byY={};
+        tc.items.forEach(it=>{ if(!it.str||!it.str.trim())return; const y=Math.round(it.transform[5]); (byY[y]=byY[y]||[]).push({x:it.transform[4],s:it.str}); });
+        Object.keys(byY).map(Number).sort((a,b)=>b-a).forEach(y=>{
+          const line=byY[y].sort((a,b)=>a.x-b.x).map(o=>o.s).join(" ").replace(/\s+/g," ").trim();
+          if(line)lines.push(norm(line));
+        });
+      }
+    }catch(e){ alert("อ่าน PDF ไม่สำเร็จ: "+e.message); return; }
+    let level=""; const lm=file.name.match(/ปว[ชส]\s*\.?\s*[123]/);
+    if(lm)level=lm[0].replace(/\s/g,"").replace("ปวช","ปวช.").replace("ปวส","ปวส.").replace("..",".");
+    else if(/ปวช/.test(file.name))level="ปวช."; else if(/ปวส/.test(file.name))level="ปวส.";
+    const PREF=["นางสาว","นาย","นาง","เด็กชาย","เด็กหญิง"];
+    let major="",group="",students=[];
+    for(const ln of lines){
+      let h=ln.match(/^(?:แผนกวิชา\s+)?(.+?)\s+(\d{9})\s*:\s*(.+?)\s*$/);
+      if(h && !/^\d/.test(ln)){ major=h[1].replace(/^แผนกวิชา\s*/,"").replace(/\s*กลุ่?มเรียน\s*$/,"").trim(); group=h[3].trim(); continue; }
+      let d=ln.match(/^\d+\s+(\d{10,})\s+(.+?)\s*$/);
+      if(d){
+        let name=d[2].trim(), prefix="";
+        for(const p of PREF){ if(name.startsWith(p)){prefix=p;name=name.slice(p.length).trim();break;} }
+        if(!prefix)continue; // ข้ามแถวที่ไม่ใช่รายชื่อ
+        const sp=name.indexOf(" "); let first=name,last="";
+        if(sp>0){first=name.slice(0,sp).trim();last=name.slice(sp+1).trim();}
+        if(last==="-")last="";
+        students.push({code:d[1],prefix,first,last,level,major,room:group,phone:"",gphone:"",care:1,tags:[],note:"",logs:[],updatedAt:todayTH()});
+      }
+    }
+    if(!students.length){ alert("ไม่พบรายชื่อในไฟล์ PDF นี้\n(รองรับไฟล์ทะเบียนรูปแบบของ วษท.เชียงใหม่ — ถ้าเป็นรูปแบบอื่นแจ้งได้)"); return; }
+    await this.uploadStudents(students, `จากไฟล์ PDF: ${file.name}\nระดับชั้น: ${level||"(ไม่ระบุ)"}`);
   }
 };
 
@@ -615,7 +663,7 @@ $("btnExpJson").onclick=()=>Data.exportJSON(); $("btnExpCsv").onclick=()=>Data.e
 $("btnImp").onclick=()=>$("impFile").click();
 $("impFile").onchange=function(){ if(this.files[0])Data.importJSON(this.files[0]); this.value=""; };
 $("btnImpSheet").onclick=()=>$("impSheetFile").click();
-$("impSheetFile").onchange=function(){ if(this.files[0])Data.importSheet(this.files[0]); this.value=""; };
+$("impSheetFile").onchange=function(){ const f=this.files[0]; if(f){ /\.pdf$/i.test(f.name)?Data.importPDF(f):Data.importSheet(f); } this.value=""; };
 $("btnTemplate").onclick=()=>Data.downloadTemplate();
 $("btnCopy").onclick=()=>{ navigator.clipboard.writeText($("shareUrl").value).then(()=>{$("btnCopy").textContent="✓ คัดลอกแล้ว";setTimeout(()=>$("btnCopy").textContent="📋 คัดลอกลิงค์",1500);}); };
 </script>
