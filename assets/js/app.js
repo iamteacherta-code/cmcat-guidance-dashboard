@@ -420,15 +420,46 @@
       <p class="muted-sm">* “สำเร็จ” = (ศึกษาต่อ + มีงานทำ) ต่อจำนวนที่ติดตามได้</p>`;
   }
 
-  /* ================= 6. ผู้ปฏิบัติงาน ================= */
+  /* ================= 6. ผู้ปฏิบัติงาน (โครงสร้างบุคลากร) ================= */
+  const escS = s => String(s == null ? "" : s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  function pChip(p) {
+    const cls = /ที่ปรึกษา/.test(p) ? "adv" : /ประธาน/.test(p) ? "chair"
+      : /ผู้ช่วยเลขา/.test(p) ? "sec2" : /เลขานุการ/.test(p) ? "sec" : "mem";
+    return `<span class="p-chip ${cls}">${escS(p)}</span>`;
+  }
+  function initial(name) {
+    const n = name.replace(/^(นางสาว|นาย|นาง|ว่าที่\s*ร\.ต\.|เด็กชาย|เด็กหญิง)\s*/, "").trim();
+    return n[0] || "•";
+  }
+  function person(m) {
+    return `<div class="person"><span class="p-av">${escS(initial(m.n))}</span>
+      <span class="p-name">${escS(m.n)}</span>${pChip(m.p)}</div>`;
+  }
+  function committee(c, cls, showRole) {
+    return `<div class="cmt ${cls || ""}">
+      <div class="cmt-h"><h4>${escS(c.name)}${c.label ? ` <span class="cmt-zone">${escS(c.label)}</span>` : ""}</h4>
+        <span class="cmt-n">${c.members.length} คน</span></div>
+      ${c.area ? `<div class="cmt-area">📍 ${escS(c.area)}</div>` : ""}
+      <div class="persons">${c.members.map(person).join("")}</div>
+      ${showRole && c.role ? `<div class="cmt-role"><b>หน้าที่:</b> ${escS(c.role)}</div>` : ""}</div>`;
+  }
   function staff() {
-    $("#staffGrid").innerHTML = CMCAT.staff.map(s => `
-      <div class="staff-card">
-        <div class="staff-role">${s.role}</div>
-        <div class="staff-name">${s.name}</div>
-        <div class="staff-task">${s.tasks}</div>
-      </div>`).join("");
-    $("#staffNote").textContent = CMCAT.staffNote;
+    const o = CMCAT.staffOrg;
+    if (!o) { $("#staffOrg").innerHTML = ""; return; }
+    const zoneRole = (o.zones.find(z => z.role) || {}).role || "";
+    $("#staffOrg").innerHTML = `
+      <div class="org-meta">
+        <div class="org-order">📋 ${escS(o.order)}</div>
+        <div class="org-title">${escS(o.title)}</div>
+        <div class="org-sign">สั่ง ณ วันที่ ${escS(o.date)} · ลงนามโดย ${escS(o.signedBy)}</div>
+      </div>
+      <div class="org-tier"><span>ระดับอำนวยการ &amp; ดำเนินงาน</span></div>
+      <div class="lead-row">${committee(o.direction, "lead", true)}${committee(o.operation, "oper", true)}</div>
+      <div class="org-tier"><span>คณะกรรมการแนะแนว ๙ เขตพื้นที่การศึกษา</span></div>
+      <div class="zone-grid">${o.zones.map(z => committee(z, "zone", false)).join("")}</div>
+      ${zoneRole ? `<p class="callout" style="margin-top:12px;font-size:.86rem"><b>หน้าที่คณะกรรมการแนะแนวทุกเขต:</b> ${escS(zoneRole)}</p>` : ""}
+      <div class="org-tier"><span>คณะทำงานสนับสนุน</span></div>
+      <div class="support-grid">${o.support.map(c => committee(c, "sup", true)).join("")}</div>`;
   }
 
   /* ================= 7. วิเคราะห์เพื่ออนาคต ================= */

@@ -243,6 +243,48 @@ table.tbl.mini tr:last-child td{border-bottom:none}
 .staff-task{font-size:.83rem;color:var(--muted);margin-top:5px}
 .edit-note{font-size:.82rem;color:var(--muted);background:#fffde7;padding:10px 14px;
   border-radius:10px;border:1px dashed var(--gold)}
+
+/* ---------- โครงสร้างบุคลากร (org) ---------- */
+.org-meta{background:linear-gradient(120deg,var(--green-d),var(--green));color:#fff;
+  border-radius:var(--radius);padding:16px 20px;margin-bottom:6px}
+.org-order{font-size:.82rem;opacity:.9}
+.org-title{font-size:1.05rem;font-weight:700;margin:4px 0}
+.org-sign{font-size:.78rem;opacity:.88}
+.org-tier{display:flex;align-items:center;gap:12px;margin:22px 0 12px}
+.org-tier::before,.org-tier::after{content:"";flex:1;height:1px;background:var(--line)}
+.org-tier span{font-weight:700;color:var(--green-d);font-size:.95rem;white-space:nowrap}
+.lead-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.zone-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.support-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+@media(max-width:680px){.lead-row{grid-template-columns:1fr}}
+.cmt{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+.cmt-h{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);background:#fafcfa}
+.cmt-h h4{font-size:.92rem;color:var(--ink);line-height:1.35;flex:1}
+.cmt-n{flex:none;font-size:.72rem;font-weight:700;background:var(--green-bg);color:var(--green-d);
+  padding:3px 9px;border-radius:20px;white-space:nowrap}
+.cmt.lead .cmt-h{background:linear-gradient(120deg,#1b5e20,#2e7d32)}
+.cmt.oper .cmt-h{background:linear-gradient(120deg,#00695c,#00897b)}
+.cmt.lead .cmt-h h4,.cmt.oper .cmt-h h4{color:#fff}
+.cmt.lead .cmt-n,.cmt.oper .cmt-n{background:rgba(255,255,255,.9)}
+.cmt-zone{display:inline-block;font-size:.72rem;font-weight:700;background:var(--gold);color:#5a3d00;
+  padding:1px 9px;border-radius:20px;margin-left:4px;vertical-align:middle}
+.cmt.lead .cmt-zone,.cmt.oper .cmt-zone{background:#fff}
+.cmt-area{font-size:.76rem;color:var(--muted);padding:8px 14px 0}
+.persons{padding:8px 14px 12px;display:flex;flex-direction:column;gap:2px;flex:1}
+.person{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed #eef2ee}
+.person:last-child{border-bottom:none}
+.p-av{width:26px;height:26px;flex:none;border-radius:50%;background:var(--green-bg);color:var(--green-d);
+  display:grid;place-items:center;font-weight:700;font-size:.82rem}
+.p-name{flex:1;font-size:.86rem;min-width:0}
+.p-chip{flex:none;font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.p-chip.chair{background:#fff8e1;color:#b8860b}
+.p-chip.adv{background:#f3e5f5;color:#7b1fa2}
+.p-chip.sec{background:#e3f2fd;color:#0277bd}
+.p-chip.sec2{background:#e8eaf6;color:#3949ab}
+.p-chip.mem{background:#eef4ee;color:#4a6a52}
+.cmt-role{font-size:.76rem;color:var(--muted);padding:10px 14px;border-top:1px solid var(--line);background:#fafcfa}
+.cmt-role b{color:var(--green-d)}
 .year-pick{display:flex;align-items:center;gap:8px;font-size:.88rem}
 .year-pick select{padding:6px 10px;border-radius:8px;border:1px solid var(--line);
   font-family:inherit;font-size:.9rem;background:#fff}
