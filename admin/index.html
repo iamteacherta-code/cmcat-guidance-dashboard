@@ -324,13 +324,23 @@ function grad(){
   });
 }
 function staff(){
-  const v=$("view-staff"); v.innerHTML=`<div class="card"><h3>ผู้ปฏิบัติงานแนะแนว</h3>
-    <p class="hint">ชื่อ-ตำแหน่ง และหน้าที่</p><div id="gStaff"></div>
-    <div class="sub-h">หมายเหตุ (ท้ายส่วน)</div><div id="staffNote"></div></div>`;
-  grid($("gStaff"), work.staff,
-    [{k:"role",label:"ตำแหน่ง (ป้าย)"},{k:"name",label:"ชื่อ-ตำแหน่งเต็ม"},{k:"tasks",label:"หน้าที่"}],
-    ()=>({role:"",name:"",tasks:""}));
-  $("staffNote").append(fld("", work, "staffNote", "area"));
+  const o=work.staffOrg, v=$("view-staff");
+  if(o){
+    const total=(o.direction?o.direction.members.length:0)+(o.operation?o.operation.members.length:0)
+      +(o.zones||[]).reduce((a,z)=>a+z.members.length,0)+(o.support||[]).reduce((a,c)=>a+c.members.length,0);
+    v.innerHTML=`<div class="card"><h3>ผู้ปฏิบัติงานแนะแนว (โครงสร้างบุคลากร)</h3>
+      <p class="hint">${o.order||""}</p>
+      <p style="font-size:.9rem"><b>${o.title||""}</b><br>
+        มี ${(o.zones||[]).length} เขตพื้นที่ + ${(o.support||[]).length} คณะทำงานสนับสนุน · รวม ${total} ตำแหน่ง</p>
+      <div class="note" style="background:#fff8e1;border:1px dashed var(--gold);border-radius:10px;padding:12px 14px;font-size:.86rem;color:var(--muted)">
+        ℹ️ โครงสร้างนี้มาจาก<b>คำสั่งแต่งตั้งอย่างเป็นทางการ</b> จึงแก้ผ่านฟอร์มนี้ไม่ได้
+        เมื่อมีคำสั่งฉบับใหม่ ให้อัปโหลดไฟล์คำสั่งเข้าคลังเอกสาร แล้วแจ้งผู้ดูแลระบบให้ปรับปรุงข้อมูล
+        (แก้ที่ไฟล์ assets/js/data.js ส่วน staffOrg)</div>
+    </div>`;
+  }else{
+    v.innerHTML=`<div class="card"><h3>ผู้ปฏิบัติงานแนะแนว</h3>
+      <p class="hint">ยังไม่มีข้อมูลโครงสร้างบุคลากร (staffOrg)</p></div>`;
+  }
 }
 
 /* ---------- แท็บ ---------- */
