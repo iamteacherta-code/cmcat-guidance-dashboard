@@ -623,27 +623,29 @@ const Data = {
       try{ await setDoc(doc(db,"students",id),s); ok++; }catch(e){ fail++; console.error(e); } }
     alert(`อัปโหลดสำเร็จ ${ok} รายชื่อ`+(fail?` (ล้มเหลว ${fail})`:" ✓"));
   },
-  // นำเข้ารายชื่อจาก PDF ทะเบียน (อ่าน+แก้อักขระในเบราว์เซอร์)
-  async importPDF(file){
-    if(typeof pdfjsLib==="undefined"){ alert("ไลบรารีอ่าน PDF ยังโหลดไม่เสร็จ กรุณาลองใหม่"); return; }
+  // อ่าน PDF ทะเบียน -> รายชื่อ (แยกจากการอัปโหลด เพื่อทดสอบได้)
+  async parsePDF(file){
+    if(typeof pdfjsLib==="undefined") throw new Error("ไลบรารีอ่าน PDF ยังโหลดไม่เสร็จ");
     const MAP={0xF70A:"่",0xF70B:"้",0xF706:"้",0xF70E:"์",0xF709:"์",0xF702:"ี",0xF701:"ิ",
       0xF710:"ั",0xF716:"ั",0xF714:"ี",0xF70C:"๊",0xF70D:"๋",0xF712:"็",0xF705:"่",0xF713:"ื",0xF704:"่",0xF70F:""};
     const MARKS=new Set([0x0E31,0x0E34,0x0E35,0x0E36,0x0E37,0x0E38,0x0E39,0x0E3A,0x0E47,0x0E48,0x0E49,0x0E4A,0x0E4B,0x0E4C,0x0E4D,0x0E4E]);
     const norm=s=>{ let o="";for(const ch of s){const cp=ch.codePointAt(0);o+=(cp in MAP)?MAP[cp]:ch;} o=o.replace(/ํา/g,"ำ");
       let r="";for(let i=0;i<o.length;i++){ if(i>0&&o[i]===o[i-1]&&MARKS.has(o.codePointAt(i)))continue; r+=o[i]; } return r; };
+    // ต่อ item เป็นบรรทัด โดยเว้นวรรคเฉพาะเมื่อช่องว่างแนวนอนกว้างพอ (กันแทรกช่องว่างกลางชื่อ)
+    const lineText=items=>{ items.sort((a,b)=>a.x-b.x); let out="";
+      for(let i=0;i<items.length;i++){ const it=items[i];
+        if(i>0){ const pv=items[i-1]; const gap=it.x-(pv.x+(pv.w||0)); if(gap>(it.h||10)*0.45) out+=" "; }
+        out+=it.s; }
+      return norm(out).replace(/\s+/g," ").trim(); };
     let lines=[];
-    try{
-      const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
-      for(let p=1;p<=pdf.numPages;p++){
-        const tc=await (await pdf.getPage(p)).getTextContent();
-        const byY={};
-        tc.items.forEach(it=>{ if(!it.str||!it.str.trim())return; const y=Math.round(it.transform[5]); (byY[y]=byY[y]||[]).push({x:it.transform[4],s:it.str}); });
-        Object.keys(byY).map(Number).sort((a,b)=>b-a).forEach(y=>{
-          const line=byY[y].sort((a,b)=>a.x-b.x).map(o=>o.s).join(" ").replace(/\s+/g," ").trim();
-          if(line)lines.push(norm(line));
-        });
-      }
-    }catch(e){ alert("อ่าน PDF ไม่สำเร็จ: "+e.message); return; }
+    const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+    for(let p=1;p<=pdf.numPages;p++){
+      const tc=await (await pdf.getPage(p)).getTextContent();
+      const byY={};
+      tc.items.forEach(it=>{ if(!it.str||!it.str.trim())return; const y=Math.round(it.transform[5]);
+        (byY[y]=byY[y]||[]).push({x:it.transform[4],s:it.str,w:it.width,h:it.height}); });
+      Object.keys(byY).map(Number).sort((a,b)=>b-a).forEach(y=>{ const l=lineText(byY[y]); if(l)lines.push(l); });
+    }
     let level=""; const lm=file.name.match(/ปว[ชส]\s*\.?\s*[123]/);
     if(lm)level=lm[0].replace(/\s/g,"").replace("ปวช","ปวช.").replace("ปวส","ปวส.").replace("..",".");
     else if(/ปวช/.test(file.name))level="ปวช."; else if(/ปวส/.test(file.name))level="ปวส.";
@@ -656,15 +658,22 @@ const Data = {
       if(d){
         let name=d[2].trim(), prefix="";
         for(const p of PREF){ if(name.startsWith(p)){prefix=p;name=name.slice(p.length).trim();break;} }
-        if(!prefix)continue; // ข้ามแถวที่ไม่ใช่รายชื่อ
+        if(!prefix)continue;
         const sp=name.indexOf(" "); let first=name,last="";
         if(sp>0){first=name.slice(0,sp).trim();last=name.slice(sp+1).trim();}
         if(last==="-")last="";
-        students.push({code:d[1],prefix,first,last,level,major,room:group,phone:"",gphone:"",care:1,tags:[],note:"",logs:[],updatedAt:todayTH()});
+        const lv=level||(d[1][2]==="3"?"ปวส.":"ปวช."); // สำรอง: เดาจากรหัส (2=ปวช, 3=ปวส)
+        students.push({code:d[1],prefix,first,last,level:lv,major,room:group,phone:"",gphone:"",care:1,tags:[],note:"",logs:[],updatedAt:todayTH()});
       }
     }
-    if(!students.length){ alert("ไม่พบรายชื่อในไฟล์ PDF นี้\n(รองรับไฟล์ทะเบียนรูปแบบของ วษท.เชียงใหม่ — ถ้าเป็นรูปแบบอื่นแจ้งได้)"); return; }
-    await this.uploadStudents(students, `จากไฟล์ PDF: ${file.name}\nระดับชั้น: ${level||"(ไม่ระบุ)"}`);
+    return {students, level};
+  },
+  // นำเข้ารายชื่อจาก PDF ทะเบียน (อ่าน+แก้อักขระในเบราว์เซอร์)
+  async importPDF(file){
+    let res;
+    try{ res=await this.parsePDF(file); }catch(e){ alert("อ่าน PDF ไม่สำเร็จ: "+e.message); return; }
+    if(!res.students.length){ alert("ไม่พบรายชื่อในไฟล์ PDF นี้\n(รองรับไฟล์ทะเบียนรูปแบบของ วษท.เชียงใหม่ — ถ้าเป็นรูปแบบอื่นแจ้งได้)"); return; }
+    await this.uploadStudents(res.students, `จากไฟล์ PDF: ${file.name}\nระดับชั้น: ${res.level||"(ไม่ระบุ)"}`);
   }
 };
 
@@ -734,6 +743,12 @@ $("btnDocLink").onclick=()=>Docs.addLink();
 $("btnDocUp").onclick=()=>$("docFile").click();
 $("docFile").onchange=function(){ if(this.files[0])Docs.add(this.files[0]); this.value=""; };
 $("btnCopy").onclick=()=>{ navigator.clipboard.writeText($("shareUrl").value).then(()=>{$("btnCopy").textContent="✓ คัดลอกแล้ว";setTimeout(()=>$("btnCopy").textContent="📋 คัดลอกลิงค์",1500);}); };
+
+// ทดสอบการอ่าน PDF เฉพาะในเครื่อง (localhost) — ไม่อัปโหลด แค่คืนผลการแยกวิเคราะห์
+if(location.hostname==="localhost"||location.hostname==="127.0.0.1"){
+  window.__testParsePDF=async(url)=>{ const b=await (await fetch(url)).blob(); const f=new File([b],url.split("/").pop());
+    return await Data.parsePDF(f); };
+}
 </script>
 </body>
 </html>
