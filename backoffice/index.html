@@ -459,7 +459,8 @@ const Reg = { render(){
   const q=($("regSearch").value||"").trim().toLowerCase(), fl=$("regLevel").value, fc=$("regCare").value, fr=$("regRoom").value;
   const list=DB.students.filter(s=>{
     if(fl&&s.level!==fl)return false; if(fc&&+s.care!==+fc)return false; if(fr&&(s.room||"").trim()!==fr)return false;
-    if(q){const h=((s.code||"")+" "+(s.first||"")+" "+(s.last||"")+" "+(s.major||"")+" "+(s.level||"")+" "+(s.room||"")).toLowerCase(); if(!h.includes(q))return false;}
+    if(q){const full=(s.prefix||"")+(s.first||"")+" "+(s.last||"");
+      const h=((s.code||"")+" "+full+" "+(s.major||"")+" "+(s.level||"")+" "+(s.room||"")).toLowerCase(); if(!h.includes(q))return false;}
     return true;
   }).sort((a,b)=>(a.level||"").localeCompare(b.level||"","th")||(a.room||"").localeCompare(b.room||"","th")||(a.first||"").localeCompare(b.first||"","th"));
   const box=$("regTable");
@@ -481,7 +482,7 @@ const Care = { render(){
   const q=($("careSearch").value||"").trim().toLowerCase(), fl=$("careLevel").value, fr=$("careRoom").value;
   const match=s=>{
     if(fl&&s.level!==fl)return false; if(fr&&(s.room||"").trim()!==fr)return false;
-    if(q){const h=((s.code||"")+" "+(s.first||"")+" "+(s.last||"")).toLowerCase(); if(!h.includes(q))return false;}
+    if(q){const h=((s.code||"")+" "+(s.prefix||"")+(s.first||"")+" "+(s.last||"")).toLowerCase(); if(!h.includes(q))return false;}
     return true;
   };
   const base=DB.students.filter(match);
@@ -748,6 +749,10 @@ $("btnCopy").onclick=()=>{ navigator.clipboard.writeText($("shareUrl").value).th
 if(location.hostname==="localhost"||location.hostname==="127.0.0.1"){
   window.__testParsePDF=async(url)=>{ const b=await (await fetch(url)).blob(); const f=new File([b],url.split("/").pop());
     return await Data.parsePDF(f); };
+  window.__boTest=(n=40)=>{ const F=["สมชาย","วราภรณ์","ธนกร","สุดารัตน์","อนุชา","กัลยรัตน์","ณัฐพงศ์"],L=["ใจดี","แก้วมา","สุขใจ","รักเรียน"];
+    DB.students=Array.from({length:n},(_,i)=>({id:"t"+i,code:"6921701"+String(i).padStart(4,"0"),prefix:i%2?"นาย":"นางสาว",
+      first:F[i%F.length],last:L[i%L.length],level:["ปวช.1","ปวส.1","ปวช.2"][i%3],major:"พืชศาสตร์",room:"ช.69ห้อง"+(1+i%4),care:1,tags:[],logs:[]}));
+    $("loading").classList.add("hidden");$("gate").classList.add("hidden");$("app").classList.remove("hidden");App.start();App.tab("reg");return "ok "+n; };
 }
 </script>
 </body>

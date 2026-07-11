@@ -361,6 +361,7 @@
   /* ================= 4. กลุ่มเป้าหมาย & ช่องทาง ================= */
   function survey() {
     const sv = CMCAT.survey;
+    const sN = $("#surveyN"); if (sN) sN.textContent = fmt(sv.total);
     Chart.donut($("#svLevel"), sv.level.map((d, i) => ({ ...d, color: [C.pvc, C.pvs][i] })),
       { centerValue: sv.total, centerLabel: "ผู้ตอบ" });
     Chart.hbar($("#svChannel"), sv.channel, { labelW: 250, color: "#0277bd" });
@@ -422,6 +423,7 @@
 
   /* ================= 6. ผู้ปฏิบัติงาน (โครงสร้างบุคลากร) ================= */
   const escS = s => String(s == null ? "" : s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  let _orgPinned = null;
   function pChip(p) {
     const cls = /ที่ปรึกษา/.test(p) ? "adv" : /ประธาน/.test(p) ? "chair"
       : /ผู้ช่วยเลขา/.test(p) ? "sec2" : /เลขานุการ/.test(p) ? "sec" : "mem";
@@ -435,31 +437,71 @@
     return `<div class="person"><span class="p-av">${escS(initial(m.n))}</span>
       <span class="p-name">${escS(m.n)}</span>${pChip(m.p)}</div>`;
   }
-  function committee(c, cls, showRole) {
-    return `<div class="cmt ${cls || ""}">
-      <div class="cmt-h"><h4>${escS(c.name)}${c.label ? ` <span class="cmt-zone">${escS(c.label)}</span>` : ""}</h4>
-        <span class="cmt-n">${c.members.length} คน</span></div>
-      ${c.area ? `<div class="cmt-area">📍 ${escS(c.area)}</div>` : ""}
-      <div class="persons">${c.members.map(person).join("")}</div>
-      ${showRole && c.role ? `<div class="cmt-role"><b>หน้าที่:</b> ${escS(c.role)}</div>` : ""}</div>`;
+  function orgNode(c, cls, ci) {
+    const pres = (c.members.find(m => /ประธาน/.test(m.p)) || c.members[0] || {}).n || "";
+    return `<button type="button" class="onode ${cls}" data-ci="${ci}">
+      <span class="on-title">${escS(c.label || c.name)}</span>
+      <span class="on-head">${escS(pres)}</span>
+      <span class="on-count">${c.members.length} คน</span></button>`;
   }
   function staff() {
-    const o = CMCAT.staffOrg;
-    if (!o) { $("#staffOrg").innerHTML = ""; return; }
-    const zoneRole = (o.zones.find(z => z.role) || {}).role || "";
-    $("#staffOrg").innerHTML = `
-      <div class="org-meta">
-        <div class="org-order">📋 ${escS(o.order)}</div>
+    const o = CMCAT.staffOrg, box = $("#staffOrg");
+    if (!o) { box.innerHTML = ""; return; }
+    _orgPinned = null;
+    const all = [o.direction, o.operation, ...o.zones, ...o.support];
+    const ni = c => all.indexOf(c);
+    box.innerHTML = `
+      <div class="org-meta"><div class="org-order">📋 ${escS(o.order)}</div>
         <div class="org-title">${escS(o.title)}</div>
-        <div class="org-sign">สั่ง ณ วันที่ ${escS(o.date)} · ลงนามโดย ${escS(o.signedBy)}</div>
+        <div class="org-sign">สั่ง ณ วันที่ ${escS(o.date)} · ลงนามโดย ${escS(o.signedBy)}</div></div>
+      <div class="org-tree">
+        <div class="ot-row">${orgNode(o.direction, "lead", ni(o.direction))}</div>
+        <div class="ot-line"></div>
+        <div class="ot-row">${orgNode(o.operation, "oper", ni(o.operation))}</div>
+        <div class="ot-line"></div>
+        <div class="ot-split">
+          <div class="ot-branch">
+            <div class="ot-gh">คณะกรรมการแนะแนว · ๙ เขตพื้นที่</div>
+            <div class="ot-leaf">${o.zones.map(z => orgNode(z, "zone", ni(z))).join("")}</div></div>
+          <div class="ot-branch">
+            <div class="ot-gh">คณะทำงานสนับสนุน · ๕ ฝ่าย</div>
+            <div class="ot-leaf">${o.support.map(c => orgNode(c, "sup", ni(c))).join("")}</div></div>
+        </div>
       </div>
-      <div class="org-tier"><span>ระดับอำนวยการ &amp; ดำเนินงาน</span></div>
-      <div class="lead-row">${committee(o.direction, "lead", true)}${committee(o.operation, "oper", true)}</div>
-      <div class="org-tier"><span>คณะกรรมการแนะแนว ๙ เขตพื้นที่การศึกษา</span></div>
-      <div class="zone-grid">${o.zones.map(z => committee(z, "zone", false)).join("")}</div>
-      ${zoneRole ? `<p class="callout" style="margin-top:12px;font-size:.86rem"><b>หน้าที่คณะกรรมการแนะแนวทุกเขต:</b> ${escS(zoneRole)}</p>` : ""}
-      <div class="org-tier"><span>คณะทำงานสนับสนุน</span></div>
-      <div class="support-grid">${o.support.map(c => committee(c, "sup", true)).join("")}</div>`;
+      <div id="orgPop" class="org-pop" hidden></div>`;
+
+    const pop = $("#orgPop");
+    const popHTML = c => `<div class="op-h">${escS(c.name)}${c.label ? ` <span class="op-zone">${escS(c.label)}</span>` : ""}</div>
+      ${c.area ? `<div class="op-area">📍 ${escS(c.area)}</div>` : ""}
+      <div class="op-people">${c.members.map(person).join("")}</div>
+      ${c.role ? `<div class="op-role"><b>หน้าที่:</b> ${escS(c.role)}</div>` : ""}`;
+    const place = el => {
+      const r = el.getBoundingClientRect();
+      let x = r.left, y = r.bottom + 8;
+      if (x + pop.offsetWidth > innerWidth - 12) x = innerWidth - pop.offsetWidth - 12;
+      if (y + pop.offsetHeight > innerHeight - 12) y = r.top - pop.offsetHeight - 8;
+      pop.style.left = Math.max(12, x) + "px"; pop.style.top = Math.max(12, y) + "px";
+    };
+    box.querySelectorAll(".onode").forEach(el => {
+      const c = all[+el.dataset.ci];
+      const show = () => { pop.innerHTML = popHTML(c); pop.hidden = false; place(el); };
+      el.addEventListener("pointerenter", () => { if (_orgPinned === null) show(); });
+      el.addEventListener("pointerleave", () => { if (_orgPinned === null) pop.hidden = true; });
+      el.addEventListener("click", e => {
+        e.stopPropagation();
+        if (_orgPinned === el.dataset.ci) { _orgPinned = null; el.classList.remove("pin"); pop.hidden = true; }
+        else { box.querySelectorAll(".onode.pin").forEach(x => x.classList.remove("pin")); _orgPinned = el.dataset.ci; el.classList.add("pin"); show(); }
+      });
+    });
+    if (!window.__orgOutside) {
+      window.__orgOutside = true;
+      document.addEventListener("click", e => {
+        if (_orgPinned !== null && !e.target.closest(".onode") && !e.target.closest("#orgPop")) {
+          _orgPinned = null; const p = document.getElementById("orgPop"); if (p) p.hidden = true;
+          document.querySelectorAll(".onode.pin").forEach(x => x.classList.remove("pin"));
+        }
+      });
+    }
   }
 
   /* ================= 7. วิเคราะห์เพื่ออนาคต ================= */
