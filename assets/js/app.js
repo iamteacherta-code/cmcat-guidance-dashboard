@@ -475,31 +475,65 @@
       ${c.area ? `<div class="op-area">📍 ${escS(c.area)}</div>` : ""}
       <div class="op-people">${c.members.map(person).join("")}</div>
       ${c.role ? `<div class="op-role"><b>หน้าที่:</b> ${escS(c.role)}</div>` : ""}`;
+    // เส้นเชื่อมโยงจากกล่องรายชื่อ → คณะที่ชี้/คลิก
+    let link = document.getElementById("orgLink");
+    if (!link) {
+      link = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      link.id = "orgLink";
+      link.setAttribute("aria-hidden", "true");
+      link.innerHTML = `<path fill="none" stroke="var(--green-d)" stroke-width="2.5" stroke-linecap="round"/>` +
+        `<circle r="5" fill="var(--green-d)"/>`;
+      document.body.appendChild(link);
+    }
+    const linkPath = link.querySelector("path"), linkDot = link.querySelector("circle");
+    let activeEl = null;
+    const hidePop = () => { pop.hidden = true; link.style.display = "none"; activeEl = null; };
     const place = el => {
       const r = el.getBoundingClientRect();
-      let x = r.left, y = r.bottom + 8;
-      if (x + pop.offsetWidth > innerWidth - 12) x = innerWidth - pop.offsetWidth - 12;
-      if (y + pop.offsetHeight > innerHeight - 12) y = r.top - pop.offsetHeight - 8;
-      pop.style.left = Math.max(12, x) + "px"; pop.style.top = Math.max(12, y) + "px";
+      const pw = pop.offsetWidth, ph = pop.offsetHeight, gap = 22;
+      const toLeft = el.classList.contains("sup");   // คณะฝั่งขวา → กล่องออกทางซ้าย
+      let x, anchorX, edgeX;
+      const putRight = () => { x = r.right + gap; anchorX = r.right; edgeX = x; };
+      const putLeft  = () => { x = r.left - gap - pw; anchorX = r.left; edgeX = x + pw; };
+      if (toLeft) putLeft(); else putRight();
+      if (x < 12) putRight();
+      else if (x + pw > innerWidth - 12) putLeft();
+      const nodeCY = r.top + r.height / 2;
+      const y = Math.max(12, Math.min(nodeCY - ph / 2, innerHeight - ph - 12));
+      pop.style.left = x + "px"; pop.style.top = y + "px";
+      // เส้นโค้งจากขอบคณะไปยังขอบกล่อง + จุดวงกลมชี้ที่คณะ
+      const cY = Math.max(y + 18, Math.min(nodeCY, y + ph - 18));
+      const mx = (anchorX + edgeX) / 2;
+      link.style.display = "block";
+      linkPath.setAttribute("d", `M${anchorX},${nodeCY} C${mx},${nodeCY} ${mx},${cY} ${edgeX},${cY}`);
+      linkDot.setAttribute("cx", anchorX); linkDot.setAttribute("cy", nodeCY);
     };
     let hideT = null;
     box.querySelectorAll(".onode").forEach(el => {
       const c = all[+el.dataset.ci];
-      const show = () => { clearTimeout(hideT); pop.innerHTML = popHTML(c); pop.hidden = false; place(el); };
+      const show = () => { clearTimeout(hideT); activeEl = el; pop.innerHTML = popHTML(c); pop.hidden = false; place(el); };
       el.addEventListener("pointerenter", () => { if (_orgPinned === null) show(); });
-      el.addEventListener("pointerleave", () => { if (_orgPinned === null) { clearTimeout(hideT); hideT = setTimeout(() => { pop.hidden = true; }, 140); } });
+      el.addEventListener("pointerleave", () => { if (_orgPinned === null) { clearTimeout(hideT); hideT = setTimeout(hidePop, 140); } });
       el.addEventListener("click", e => {
         e.stopPropagation();
         clearTimeout(hideT);
-        if (_orgPinned === el.dataset.ci) { _orgPinned = null; el.classList.remove("pin"); pop.classList.remove("pinned"); pop.hidden = true; }
+        if (_orgPinned === el.dataset.ci) { _orgPinned = null; el.classList.remove("pin"); pop.classList.remove("pinned"); hidePop(); }
         else { box.querySelectorAll(".onode.pin").forEach(x => x.classList.remove("pin")); _orgPinned = el.dataset.ci; el.classList.add("pin"); pop.classList.add("pinned"); show(); }
       });
     });
+    if (!window.__orgReflow) {
+      window.__orgReflow = true;
+      const reflow = () => { const p = document.getElementById("orgPop"), a = document.querySelector(".onode.pin"); if (p && !p.hidden && a && typeof p.__place === "function") p.__place(a); };
+      addEventListener("scroll", () => { const p = document.getElementById("orgPop"); if (p && !p.hidden && !p.classList.contains("pinned")) { p.hidden = true; const l = document.getElementById("orgLink"); if (l) l.style.display = "none"; } else reflow(); }, true);
+      addEventListener("resize", reflow);
+    }
+    pop.__place = el => { if (activeEl) place(activeEl); else place(el); };
     if (!window.__orgOutside) {
       window.__orgOutside = true;
       document.addEventListener("click", e => {
         if (_orgPinned !== null && !e.target.closest(".onode") && !e.target.closest("#orgPop")) {
           _orgPinned = null; const p = document.getElementById("orgPop"); if (p) { p.hidden = true; p.classList.remove("pinned"); }
+          const l = document.getElementById("orgLink"); if (l) l.style.display = "none";
           document.querySelectorAll(".onode.pin").forEach(x => x.classList.remove("pin"));
         }
       });
