@@ -482,22 +482,24 @@
       if (y + pop.offsetHeight > innerHeight - 12) y = r.top - pop.offsetHeight - 8;
       pop.style.left = Math.max(12, x) + "px"; pop.style.top = Math.max(12, y) + "px";
     };
+    let hideT = null;
     box.querySelectorAll(".onode").forEach(el => {
       const c = all[+el.dataset.ci];
-      const show = () => { pop.innerHTML = popHTML(c); pop.hidden = false; place(el); };
+      const show = () => { clearTimeout(hideT); pop.innerHTML = popHTML(c); pop.hidden = false; place(el); };
       el.addEventListener("pointerenter", () => { if (_orgPinned === null) show(); });
-      el.addEventListener("pointerleave", () => { if (_orgPinned === null) pop.hidden = true; });
+      el.addEventListener("pointerleave", () => { if (_orgPinned === null) { clearTimeout(hideT); hideT = setTimeout(() => { pop.hidden = true; }, 140); } });
       el.addEventListener("click", e => {
         e.stopPropagation();
-        if (_orgPinned === el.dataset.ci) { _orgPinned = null; el.classList.remove("pin"); pop.hidden = true; }
-        else { box.querySelectorAll(".onode.pin").forEach(x => x.classList.remove("pin")); _orgPinned = el.dataset.ci; el.classList.add("pin"); show(); }
+        clearTimeout(hideT);
+        if (_orgPinned === el.dataset.ci) { _orgPinned = null; el.classList.remove("pin"); pop.classList.remove("pinned"); pop.hidden = true; }
+        else { box.querySelectorAll(".onode.pin").forEach(x => x.classList.remove("pin")); _orgPinned = el.dataset.ci; el.classList.add("pin"); pop.classList.add("pinned"); show(); }
       });
     });
     if (!window.__orgOutside) {
       window.__orgOutside = true;
       document.addEventListener("click", e => {
         if (_orgPinned !== null && !e.target.closest(".onode") && !e.target.closest("#orgPop")) {
-          _orgPinned = null; const p = document.getElementById("orgPop"); if (p) p.hidden = true;
+          _orgPinned = null; const p = document.getElementById("orgPop"); if (p) { p.hidden = true; p.classList.remove("pinned"); }
           document.querySelectorAll(".onode.pin").forEach(x => x.classList.remove("pin"));
         }
       });

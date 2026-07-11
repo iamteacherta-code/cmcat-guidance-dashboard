@@ -175,6 +175,28 @@ table.tbl.mini tr:last-child td{border-bottom:none}
 .ori-total{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);text-align:right;font-size:.9rem}
 .ori-total b{color:var(--green-d);font-size:1.05rem}
 
+/* ---------- บทนำ: งานแนะแนวคืออะไร ---------- */
+.intro{background:linear-gradient(135deg,#f1f8f1 0%,#e8f5e9 100%);border:1px solid var(--green-l);
+  border-radius:18px;padding:22px 24px;margin-bottom:22px;position:relative;overflow:hidden}
+.intro::before{content:"";position:absolute;top:-40px;right:-40px;width:180px;height:180px;
+  background:radial-gradient(circle,rgba(46,125,50,.12),transparent 70%);border-radius:50%}
+.intro-main{display:flex;gap:18px;align-items:flex-start;position:relative}
+.intro-emblem{width:64px;height:64px;flex:none;border-radius:18px;background:linear-gradient(135deg,var(--green-d),var(--green));
+  display:grid;place-items:center;font-size:32px;box-shadow:0 6px 18px rgba(46,125,50,.28)}
+.intro-kicker{font-size:.8rem;color:var(--green-d);font-weight:600;letter-spacing:.2px}
+.intro-title{font-size:1.5rem;color:var(--green-d);margin:2px 0 8px;font-weight:800}
+.intro-lead{font-size:.96rem;color:var(--ink);line-height:1.7;margin:0;max-width:820px}
+.intro-lead b{color:var(--green-d)}
+.intro-aspects{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px;position:relative}
+@media(max-width:820px){.intro-aspects{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:460px){.intro-aspects{grid-template-columns:1fr}.intro-main{flex-direction:column}}
+.aspect{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+  display:flex;gap:10px;align-items:flex-start;box-shadow:var(--shadow);transition:.15s}
+.aspect:hover{border-color:var(--green-l);transform:translateY(-2px)}
+.a-ic{font-size:1.5rem;flex:none;line-height:1}
+.aspect b{display:block;color:var(--green-d);font-size:.92rem}
+.aspect span{display:block;font-size:.8rem;color:var(--muted);margin-top:2px;line-height:1.4}
+
 /* ---------- KPI ---------- */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:6px}
 @media(max-width:760px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
@@ -319,7 +341,9 @@ table.tbl.mini tr:last-child td{border-bottom:none}
 .onode.zone{border-top:3px solid var(--green)}
 .onode.sup{border-top:3px solid var(--gold)}
 .org-pop{position:fixed;z-index:60;background:#fff;border:1px solid var(--green-l);border-radius:14px;
-  box-shadow:0 12px 40px rgba(0,0,0,.28);padding:14px 16px;max-width:340px;width:max-content;max-height:72vh;overflow:auto}
+  box-shadow:0 12px 40px rgba(0,0,0,.28);padding:14px 16px;max-width:340px;width:max-content;max-height:72vh;overflow:auto;
+  pointer-events:none}
+.org-pop.pinned{pointer-events:auto}
 .op-h{font-weight:700;color:var(--green-d);font-size:.95rem;margin-bottom:4px}
 .op-zone{font-size:.72rem;background:var(--gold);color:#5a3d00;padding:1px 9px;border-radius:20px}
 .op-area{font-size:.76rem;color:var(--muted);margin-bottom:8px}
