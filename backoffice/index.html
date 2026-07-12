@@ -185,6 +185,19 @@ tbody tr:hover{background:var(--green-bg)}
 .pnote .tx{font-size:.86rem;white-space:pre-wrap;margin-top:2px}
 .pnote .x{position:absolute;top:5px;right:8px;cursor:pointer;color:var(--muted);font-size:1rem;line-height:1}
 .pnote .x:hover{color:var(--c4)}
+.zsch{border:1px solid var(--line);border-radius:10px;margin-top:6px;max-height:168px;overflow:auto;padding:4px;background:#fafcfa}
+.zsch .zs{display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:8px;font-size:.86rem;cursor:pointer}
+.zsch .zs:hover{background:var(--green-bg)}
+.zsch .zs input{width:auto;margin:0}
+.zsch .empty-z{font-size:.82rem;color:var(--muted);padding:10px}
+.seltbl{width:100%;margin-top:10px;border-collapse:collapse;font-size:.84rem}
+.seltbl th{background:#fafcfa;color:var(--muted);font-size:.74rem;font-weight:600;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+.seltbl td{padding:5px 8px;border-bottom:1px solid #f0f4f0;vertical-align:middle}
+.seltbl input{padding:5px 8px;font-size:.82rem;background:#fff}
+.seltbl .lv{width:112px}.seltbl .nn{width:74px}
+.seltbl .rm{cursor:pointer;color:var(--muted);font-size:1.1rem;line-height:1}
+.seltbl .rm:hover{color:var(--c4)}
+.sel-sum{font-size:.84rem;color:var(--green-d);font-weight:700;margin-top:9px}
 @media(max-width:600px){.form-grid{grid-template-columns:1fr}.top h1{font-size:.9rem}
   .gantt-head .lbl-sp,.gantt-label{width:120px}.gantt-inner{min-width:620px}}
 </style>
@@ -383,7 +396,12 @@ tbody tr:hover{background:var(--green-bg)}
         <div class="fld"><label>หมวดงาน</label><select id="pfPhase"></select></div>
         <div class="fld"><label>สถานะ</label><select id="pfStatus"></select></div>
         <div class="fld full"><label>ผู้รับผิดชอบ</label><input type="text" id="pfOwner" placeholder="ชื่อผู้รับผิดชอบ/คณะทำงาน"/></div>
-        <div class="fld full"><label>รายละเอียด</label><textarea id="pfDesc" rows="2" placeholder="ขอบเขต/สถานที่/เป้าหมาย"></textarea></div>
+        <div class="fld full"><label>🏫 โรงเรียนเป้าหมาย (แผนลงพื้นที่)</label>
+          <select id="pfZone"><option value="">— เลือกเขตพื้นที่การศึกษา —</option></select>
+          <div id="pfZoneSchools" class="zsch hidden"></div>
+          <div id="pfSelectedWrap"></div>
+        </div>
+        <div class="fld full"><label>หมายเหตุเพิ่มเติม</label><textarea id="pfDesc" rows="2" placeholder="สถานที่นัดหมาย / เป้าหมาย / รายละเอียดอื่น ๆ"></textarea></div>
       </div>
       <div style="margin-top:18px">
         <h4 style="font-size:.9rem;color:var(--green-d);margin-bottom:8px">📝 โน้ตการทำงาน (ทีมงานบันทึกร่วมกัน)</h4>
@@ -407,6 +425,8 @@ tbody tr:hover{background:var(--green-bg)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";</script>
+<!-- ฐานข้อมูลกลาง (โรงเรียน/เขตพื้นที่) ใช้สำหรับแผนลงพื้นที่ในปฏิทินปฏิบัติงาน -->
+<script src="../assets/js/data.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence }
@@ -822,9 +842,26 @@ const Docs = {
     try{ await deleteDoc(doc(db,"config",id)); }catch(e){ alert("ลบไม่สำเร็จ: "+e.message); } }
 };
 
+/* ---------- ฐานข้อมูลโรงเรียน/เขตพื้นที่ (จาก data.js) สำหรับแผนลงพื้นที่ ---------- */
+const DATA_OK = (typeof CMCAT!=="undefined") && CMCAT.originProvinces && CMCAT.eduZones;
+function zoneList(){
+  if(!DATA_OK)return [];
+  const out=[];
+  for(const prov in CMCAT.eduZones)
+    for(const z of CMCAT.eduZones[prov].zones) out.push({key:prov+"|"+z.z, label:prov+" เขต "+z.z});
+  return out;
+}
+function schoolsInZone(prov,z){
+  if(!DATA_OK)return [];
+  const yrs=CMCAT.originProvinces.years, y=CMCAT.originProvinces.defaultYear;
+  const arr=(yrs[y]&&yrs[y][prov])||[], map={};
+  arr.filter(s=>s.z===z).forEach(s=>{ map[s.s]=(map[s.s]||0)+(s.n||0); });
+  return Object.keys(map).sort((a,b)=>map[b]-map[a]||a.localeCompare(b,"th")).map(name=>({name,n:map[name]}));
+}
+
 /* ================= ปฏิทินปฏิบัติงาน (เก็บใน Firestore config/plan_*) ================= */
 const Planner = {
-  unsub:null, items:[], cur:null, notes:[],
+  unsub:null, items:[], cur:null, notes:[], schools:[],
   subscribe(){
     if(this.unsub)this.unsub();
     this.unsub=onSnapshot(query(collection(db,"config"),where("kind","==","plan")),snap=>{
@@ -881,12 +918,13 @@ const Planner = {
     return `<div class="plan-list">${items.map(a=>{
       const st=PSTATUS[a.status]||PSTATUS.plan;
       const dates=(a.start||a.end)?`${a.start?fmtTH(a.start):"?"} – ${a.end?fmtTH(a.end):"?"}`:"ยังไม่กำหนดวันที่";
-      const nc=(a.notes||[]).length;
+      const nc=(a.notes||[]).length, sc=(a.schools||[]), stot=sc.reduce((s,x)=>s+(+x.n||0),0);
       return `<div class="pcard" data-id="${a.id}" style="border-left-color:${st.c}">
         <div class="pt">${esc(a.title)}</div>
         <div class="pd">📅 ${dates}</div>
         <div class="pmeta"><span class="pstatus" style="background:${st.bg};color:${st.c}">${st.l}</span>
           ${a.phase?`<span class="pchip">${esc(a.phase)}</span>`:""}
+          ${sc.length?`<span class="pchip" style="background:#eef2ff;color:#3b52a4">🏫 ${sc.length} รร.${stot?` · ${stot} คน`:""}</span>`:""}
           ${a.owner?`<span class="powner">👤 ${esc(a.owner)}</span>`:""}
           ${nc?`<span class="pnc">📝 ${nc}</span>`:""}</div></div>`;
     }).join("")}</div>`;
@@ -898,9 +936,51 @@ const Planner = {
     $("pfTitle").value=a?a.title||"":""; $("pfStart").value=a?a.start||"":""; $("pfEnd").value=a?a.end||"":"";
     $("pfPhase").value=(a&&a.phase)?a.phase:PHASES[0]; $("pfStatus").value=(a&&a.status)?a.status:"plan";
     $("pfOwner").value=a?a.owner||"":""; $("pfDesc").value=a?a.desc||"":"";
+    this.schools=(a&&Array.isArray(a.schools))?a.schools.map(s=>({...s})):[];
+    this.fillZones(); $("pfZone").value=""; $("pfZoneSchools").className="zsch hidden"; $("pfZoneSchools").innerHTML="";
+    this.renderSelected();
     $("pNoteBy").value=localStorage.getItem("cmcat_plan_author")||""; $("pNoteText").value="";
     $("pmDelete").style.display=a?"":"none";
     this.renderNotes(); $("pmodal").classList.add("show");
+  },
+  fillZones(){
+    const s=$("pfZone"); if(!s)return;
+    s.innerHTML='<option value="">— เลือกเขตพื้นที่การศึกษา —</option>'+zoneList().map(z=>`<option value="${z.key}">${esc(z.label)}</option>`).join("");
+  },
+  onZoneChange(){
+    const key=$("pfZone").value, box=$("pfZoneSchools");
+    if(!key){ box.className="zsch hidden"; box.innerHTML=""; return; }
+    const [prov,z]=key.split("|"), label=prov+" เขต "+z;
+    const schools=schoolsInZone(prov,+z);
+    box.className="zsch";
+    box.innerHTML=schools.length?schools.map(sc=>{
+      const on=this.schools.some(x=>x.name===sc.name&&x.zone===label);
+      return `<label class="zs"><input type="checkbox" data-name="${esc(sc.name)}" data-n="${sc.n}" ${on?"checked":""}/>
+        <span>${esc(sc.name)} <span style="color:var(--muted);font-size:.78rem">(ในฐานข้อมูล ${sc.n} คน)</span></span></label>`;
+    }).join(""):`<div class="empty-z">ยังไม่มีข้อมูลโรงเรียนในเขตนี้ — เพิ่มเองในตารางด้านล่างได้</div>`;
+    box.querySelectorAll("input[type=checkbox]").forEach(cb=>cb.onchange=()=>{
+      const name=cb.dataset.name, dn=cb.dataset.n?+cb.dataset.n:"";
+      if(cb.checked){ if(!this.schools.some(x=>x.name===name&&x.zone===label)) this.schools.push({name,zone:label,level:"",n:dn}); }
+      else this.schools=this.schools.filter(x=>!(x.name===name&&x.zone===label));
+      this.renderSelected();
+    });
+  },
+  renderSelected(){
+    const wrap=$("pfSelectedWrap");
+    if(!this.schools.length){ wrap.innerHTML=`<div class="sel-sum" style="color:var(--muted);font-weight:400;margin-top:8px">ยังไม่ได้เลือกโรงเรียน — เลือกเขตด้านบนแล้วติ๊กโรงเรียน</div>`; return; }
+    const total=()=>this.schools.reduce((s,x)=>s+(+x.n||0),0);
+    wrap.innerHTML=`<table class="seltbl"><thead><tr><th>โรงเรียน</th><th>เขต</th><th>ระดับชั้น</th><th>จำนวน นร.</th><th></th></tr></thead>
+      <tbody>${this.schools.map((x,i)=>`<tr>
+        <td>${esc(x.name)}</td><td style="color:var(--muted);font-size:.78rem;white-space:nowrap">${esc(x.zone||"")}</td>
+        <td><input class="lv" data-i="${i}" data-k="level" value="${esc(x.level||"")}" placeholder="เช่น ม.3, ปวช."/></td>
+        <td><input class="nn" type="number" min="0" data-i="${i}" data-k="n" value="${x.n===""||x.n==null?"":x.n}"/></td>
+        <td><span class="rm" data-rm="${i}">×</span></td></tr>`).join("")}</tbody></table>
+      <div class="sel-sum">รวม ${this.schools.length} โรงเรียน · <span id="pSelSum">${total()}</span> คน</div>`;
+    wrap.querySelectorAll("input[data-k]").forEach(inp=>inp.oninput=()=>{
+      const k=inp.dataset.k; this.schools[+inp.dataset.i][k]=(k==="n")?(inp.value===""?"":+inp.value):inp.value;
+      if(k==="n"){ const el=$("pSelSum"); if(el)el.textContent=total(); }
+    });
+    wrap.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{ this.schools.splice(+b.dataset.rm,1); this.renderSelected(); this.onZoneChange(); });
   },
   renderNotes(){
     const box=$("pNoteList");
@@ -922,7 +1002,9 @@ const Planner = {
   collect(){
     return { kind:"plan", title:$("pfTitle").value.trim(), start:$("pfStart").value||"", end:$("pfEnd").value||"",
       phase:$("pfPhase").value, status:$("pfStatus").value, owner:$("pfOwner").value.trim(),
-      desc:$("pfDesc").value.trim(), notes:this.notes, updatedAt:Date.now() };
+      desc:$("pfDesc").value.trim(), notes:this.notes,
+      schools:this.schools.map(s=>({name:s.name,zone:s.zone||"",level:s.level||"",n:(s.n===""||s.n==null)?"":+s.n})),
+      updatedAt:Date.now() };
   },
   async save(){
     const rec=this.collect();
@@ -973,6 +1055,7 @@ $("impSheetFile").onchange=function(){ const f=this.files[0]; if(f){ /\.pdf$/i.t
 $("btnTemplate").onclick=()=>Data.downloadTemplate();
 $("btnAddPlan").onclick=()=>Planner.open();
 $("planFilter").onchange=()=>Planner.render();
+$("pfZone").onchange=()=>Planner.onZoneChange();
 $("pmClose").onclick=()=>Planner.close(); $("pmCancel").onclick=()=>Planner.close();
 $("pmSave").onclick=()=>Planner.save(); $("pmDelete").onclick=()=>Planner.remove();
 $("btnAddNote").onclick=()=>Planner.addNote();
