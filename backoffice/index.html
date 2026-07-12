@@ -190,6 +190,10 @@ tbody tr:hover{background:var(--green-bg)}
 .zsch .zs:hover{background:var(--green-bg)}
 .zsch .zs input{width:auto;margin:0}
 .zsch .empty-z{font-size:.82rem;color:var(--muted);padding:10px}
+.zamph{font-size:.78rem;color:var(--green-d);background:#eef5ee;border:1px solid var(--green-l);
+  padding:7px 10px;border-radius:8px;margin-top:6px;font-weight:600}
+.zadd{display:flex;gap:6px;margin-top:6px}
+.zadd input{flex:1;padding:7px 9px;font-size:.83rem}
 .selrow{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;background:#fff}
 .selrow .sh{display:flex;align-items:center;gap:8px;margin-bottom:9px}
 .selrow .sh .nm{font-weight:700;font-size:.88rem}
@@ -403,7 +407,12 @@ tbody tr:hover{background:var(--green-bg)}
         <div class="fld full"><label>ผู้รับผิดชอบ</label><input type="text" id="pfOwner" placeholder="ชื่อผู้รับผิดชอบ/คณะทำงาน"/></div>
         <div class="fld full"><label>🏫 โรงเรียนเป้าหมาย (แผนลงพื้นที่)</label>
           <select id="pfZone"><option value="">— เลือกเขตพื้นที่การศึกษา —</option></select>
+          <div id="pfZoneAmphoe" class="zamph hidden"></div>
           <div id="pfZoneSchools" class="zsch hidden"></div>
+          <div id="pfZoneAdd" class="zadd hidden">
+            <input type="text" id="pfAddSchool" placeholder="พิมพ์ชื่อโรงเรียนอื่นในเขตนี้ เพื่อเพิ่มเป็นเป้าหมาย"/>
+            <button type="button" class="btn sm" id="pfAddSchoolBtn">+ เพิ่มโรงเรียน</button>
+          </div>
           <div id="pfSelectedWrap"></div>
         </div>
         <div class="fld full"><label>หมายเหตุเพิ่มเติม</label><textarea id="pfDesc" rows="2" placeholder="สถานที่นัดหมาย / เป้าหมาย / รายละเอียดอื่น ๆ"></textarea></div>
@@ -856,6 +865,11 @@ function zoneList(){
     for(const z of CMCAT.eduZones[prov].zones) out.push({key:prov+"|"+z.z, label:prov+" เขต "+z.z});
   return out;
 }
+function zoneAmphoes(prov,z){
+  if(!DATA_OK)return [];
+  const zz=((CMCAT.eduZones[prov]&&CMCAT.eduZones[prov].zones)||[]).find(x=>x.z===z);
+  return zz?zz.amphoes:[];
+}
 function schoolsInZone(prov,z){
   if(!DATA_OK)return [];
   const yrs=CMCAT.originProvinces.years, y=CMCAT.originProvinces.defaultYear;
@@ -943,6 +957,7 @@ const Planner = {
     $("pfOwner").value=a?a.owner||"":""; $("pfDesc").value=a?a.desc||"":"";
     this.schools=(a&&Array.isArray(a.schools))?a.schools.map(s=>({...s})):[];
     this.fillZones(); $("pfZone").value=""; $("pfZoneSchools").className="zsch hidden"; $("pfZoneSchools").innerHTML="";
+    $("pfZoneAmphoe").className="zamph hidden"; $("pfZoneAmphoe").innerHTML=""; $("pfZoneAdd").className="zadd hidden"; $("pfAddSchool").value="";
     this.renderSelected();
     $("pNoteBy").value=localStorage.getItem("cmcat_plan_author")||""; $("pNoteText").value="";
     $("pmDelete").style.display=a?"":"none";
@@ -953,22 +968,32 @@ const Planner = {
     s.innerHTML='<option value="">— เลือกเขตพื้นที่การศึกษา —</option>'+zoneList().map(z=>`<option value="${z.key}">${esc(z.label)}</option>`).join("");
   },
   onZoneChange(){
-    const key=$("pfZone").value, box=$("pfZoneSchools");
-    if(!key){ box.className="zsch hidden"; box.innerHTML=""; return; }
+    const key=$("pfZone").value, box=$("pfZoneSchools"), am=$("pfZoneAmphoe"), add=$("pfZoneAdd");
+    if(!key){ box.className="zsch hidden"; box.innerHTML=""; am.className="zamph hidden"; am.innerHTML=""; add.className="zadd hidden"; return; }
     const [prov,z]=key.split("|"), label=prov+" เขต "+z;
+    const amph=zoneAmphoes(prov,+z);
+    am.className="zamph"; am.innerHTML="📍 อำเภอในเขตนี้: "+(amph.length?amph.map(a=>esc("อ."+a)).join(" · "):"—");
     const schools=schoolsInZone(prov,+z);
     box.className="zsch";
-    box.innerHTML=schools.length?schools.map(sc=>{
+    box.innerHTML=(schools.length?schools.map(sc=>{
       const on=this.schools.some(x=>x.name===sc.name&&x.zone===label);
       return `<label class="zs"><input type="checkbox" data-name="${esc(sc.name)}" data-n="${sc.n}" ${on?"checked":""}/>
-        <span>${esc(sc.name)} <span style="color:var(--muted);font-size:.78rem">(ในฐานข้อมูล ${sc.n} คน)</span></span></label>`;
-    }).join(""):`<div class="empty-z">ยังไม่มีข้อมูลโรงเรียนในเขตนี้ — เพิ่มเองในตารางด้านล่างได้</div>`;
+        <span>${esc(sc.name)} <span style="color:var(--muted);font-size:.78rem">(เคยสมัคร ${sc.n} คน)</span></span></label>`;
+    }).join(""):"")+`<div class="empty-z">${schools.length?"— หากมีโรงเรียนอื่นในอำเภอข้างต้น พิมพ์เพิ่มด้านล่าง —":"ยังไม่มีโรงเรียนในเขตนี้ในฐานข้อมูล — พิมพ์เพิ่มด้านล่างได้เลย"}</div>`;
     box.querySelectorAll("input[type=checkbox]").forEach(cb=>cb.onchange=()=>{
       const name=cb.dataset.name, dn=cb.dataset.n?+cb.dataset.n:"";
       if(cb.checked){ if(!this.schools.some(x=>x.name===name&&x.zone===label)) this.schools.push({name,zone:label,date:"",time:"",level:"",n:dn}); }
       else this.schools=this.schools.filter(x=>!(x.name===name&&x.zone===label));
       this.renderSelected();
     });
+    add.className="zadd";
+  },
+  addCustomSchool(){
+    const key=$("pfZone").value; if(!key)return;
+    const [prov,z]=key.split("|"), label=prov+" เขต "+z, inp=$("pfAddSchool"), nm=inp.value.trim();
+    if(!nm)return;
+    if(!this.schools.some(x=>x.name===nm&&x.zone===label)) this.schools.push({name:nm,zone:label,date:"",time:"",level:"",n:""});
+    inp.value=""; inp.focus(); this.renderSelected();
   },
   renderSelected(){
     const wrap=$("pfSelectedWrap");
@@ -1069,6 +1094,8 @@ $("btnTemplate").onclick=()=>Data.downloadTemplate();
 $("btnAddPlan").onclick=()=>Planner.open();
 $("planFilter").onchange=()=>Planner.render();
 $("pfZone").onchange=()=>Planner.onZoneChange();
+$("pfAddSchoolBtn").onclick=()=>Planner.addCustomSchool();
+$("pfAddSchool").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();Planner.addCustomSchool();}});
 $("pmClose").onclick=()=>Planner.close(); $("pmCancel").onclick=()=>Planner.close();
 $("pmSave").onclick=()=>Planner.save(); $("pmDelete").onclick=()=>Planner.remove();
 $("btnAddNote").onclick=()=>Planner.addNote();
