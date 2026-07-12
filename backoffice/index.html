@@ -190,14 +190,19 @@ tbody tr:hover{background:var(--green-bg)}
 .zsch .zs:hover{background:var(--green-bg)}
 .zsch .zs input{width:auto;margin:0}
 .zsch .empty-z{font-size:.82rem;color:var(--muted);padding:10px}
-.seltbl{width:100%;margin-top:10px;border-collapse:collapse;font-size:.84rem}
-.seltbl th{background:#fafcfa;color:var(--muted);font-size:.74rem;font-weight:600;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
-.seltbl td{padding:5px 8px;border-bottom:1px solid #f0f4f0;vertical-align:middle}
-.seltbl input{padding:5px 8px;font-size:.82rem;background:#fff}
-.seltbl .lv{width:112px}.seltbl .nn{width:74px}
-.seltbl .rm{cursor:pointer;color:var(--muted);font-size:1.1rem;line-height:1}
-.seltbl .rm:hover{color:var(--c4)}
-.sel-sum{font-size:.84rem;color:var(--green-d);font-weight:700;margin-top:9px}
+.selrow{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;background:#fff}
+.selrow .sh{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.selrow .sh .nm{font-weight:700;font-size:.88rem}
+.selrow .sh .zn{font-size:.76rem;color:var(--muted)}
+.selrow .sh .rm{margin-left:auto;cursor:pointer;color:var(--muted);font-size:1.2rem;line-height:1}
+.selrow .sh .rm:hover{color:var(--c4)}
+.selrow .flds{display:flex;gap:9px;flex-wrap:wrap}
+.selrow .f{display:flex;flex-direction:column;gap:3px}
+.selrow .f label{font-size:.72rem;color:var(--muted);font-weight:600}
+.selrow .f input,.selrow .f select{padding:6px 8px;font-size:.82rem;background:#fff}
+.selrow .f.dt input{width:150px}.selrow .f.tm input{width:104px}
+.selrow .f.lv select{width:104px}.selrow .f.nn input{width:88px}
+.sel-sum{font-size:.86rem;color:var(--green-d);font-weight:700;margin-top:10px}
 @media(max-width:600px){.form-grid{grid-template-columns:1fr}.top h1{font-size:.9rem}
   .gantt-head .lbl-sp,.gantt-label{width:120px}.gantt-inner{min-width:620px}}
 </style>
@@ -960,7 +965,7 @@ const Planner = {
     }).join(""):`<div class="empty-z">ยังไม่มีข้อมูลโรงเรียนในเขตนี้ — เพิ่มเองในตารางด้านล่างได้</div>`;
     box.querySelectorAll("input[type=checkbox]").forEach(cb=>cb.onchange=()=>{
       const name=cb.dataset.name, dn=cb.dataset.n?+cb.dataset.n:"";
-      if(cb.checked){ if(!this.schools.some(x=>x.name===name&&x.zone===label)) this.schools.push({name,zone:label,level:"",n:dn}); }
+      if(cb.checked){ if(!this.schools.some(x=>x.name===name&&x.zone===label)) this.schools.push({name,zone:label,date:"",time:"",level:"",n:dn}); }
       else this.schools=this.schools.filter(x=>!(x.name===name&&x.zone===label));
       this.renderSelected();
     });
@@ -969,16 +974,24 @@ const Planner = {
     const wrap=$("pfSelectedWrap");
     if(!this.schools.length){ wrap.innerHTML=`<div class="sel-sum" style="color:var(--muted);font-weight:400;margin-top:8px">ยังไม่ได้เลือกโรงเรียน — เลือกเขตด้านบนแล้วติ๊กโรงเรียน</div>`; return; }
     const total=()=>this.schools.reduce((s,x)=>s+(+x.n||0),0);
-    wrap.innerHTML=`<table class="seltbl"><thead><tr><th>โรงเรียน</th><th>เขต</th><th>ระดับชั้น</th><th>จำนวน นร.</th><th></th></tr></thead>
-      <tbody>${this.schools.map((x,i)=>`<tr>
-        <td>${esc(x.name)}</td><td style="color:var(--muted);font-size:.78rem;white-space:nowrap">${esc(x.zone||"")}</td>
-        <td><input class="lv" data-i="${i}" data-k="level" value="${esc(x.level||"")}" placeholder="เช่น ม.3, ปวช."/></td>
-        <td><input class="nn" type="number" min="0" data-i="${i}" data-k="n" value="${x.n===""||x.n==null?"":x.n}"/></td>
-        <td><span class="rm" data-rm="${i}">×</span></td></tr>`).join("")}</tbody></table>
-      <div class="sel-sum">รวม ${this.schools.length} โรงเรียน · <span id="pSelSum">${total()}</span> คน</div>`;
-    wrap.querySelectorAll("input[data-k]").forEach(inp=>inp.oninput=()=>{
-      const k=inp.dataset.k; this.schools[+inp.dataset.i][k]=(k==="n")?(inp.value===""?"":+inp.value):inp.value;
-      if(k==="n"){ const el=$("pSelSum"); if(el)el.textContent=total(); }
+    wrap.innerHTML=this.schools.map((x,i)=>`<div class="selrow">
+      <div class="sh"><span class="nm">🏫 ${esc(x.name)}</span><span class="zn">${esc(x.zone||"")}</span><span class="rm" data-rm="${i}">×</span></div>
+      <div class="flds">
+        <div class="f dt"><label>วันที่ลงพื้นที่</label><input type="date" data-i="${i}" data-k="date" value="${esc(x.date||"")}"/></div>
+        <div class="f tm"><label>เวลา</label><input type="time" data-i="${i}" data-k="time" value="${esc(x.time||"")}"/></div>
+        <div class="f lv"><label>ระดับชั้น</label><select data-i="${i}" data-k="level">
+          <option value="">— เลือก —</option>
+          <option value="ม.3" ${x.level==="ม.3"?"selected":""}>ม.3</option>
+          <option value="ม.6" ${x.level==="ม.6"?"selected":""}>ม.6</option></select></div>
+        <div class="f nn"><label>จำนวน นร.</label><input type="number" min="0" data-i="${i}" data-k="n" value="${x.n===""||x.n==null?"":x.n}"/></div>
+      </div></div>`).join("")
+      +`<div class="sel-sum">รวม ${this.schools.length} โรงเรียน · <span id="pSelSum">${total()}</span> คน</div>`;
+    wrap.querySelectorAll("[data-k]").forEach(inp=>{
+      const ev=inp.tagName==="SELECT"?"change":"input";
+      inp.addEventListener(ev,()=>{ const k=inp.dataset.k;
+        this.schools[+inp.dataset.i][k]=(k==="n")?(inp.value===""?"":+inp.value):inp.value;
+        if(k==="n"){ const el=$("pSelSum"); if(el)el.textContent=total(); }
+      });
     });
     wrap.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{ this.schools.splice(+b.dataset.rm,1); this.renderSelected(); this.onZoneChange(); });
   },
@@ -1003,7 +1016,7 @@ const Planner = {
     return { kind:"plan", title:$("pfTitle").value.trim(), start:$("pfStart").value||"", end:$("pfEnd").value||"",
       phase:$("pfPhase").value, status:$("pfStatus").value, owner:$("pfOwner").value.trim(),
       desc:$("pfDesc").value.trim(), notes:this.notes,
-      schools:this.schools.map(s=>({name:s.name,zone:s.zone||"",level:s.level||"",n:(s.n===""||s.n==null)?"":+s.n})),
+      schools:this.schools.map(s=>({name:s.name,zone:s.zone||"",date:s.date||"",time:s.time||"",level:s.level||"",n:(s.n===""||s.n==null)?"":+s.n})),
       updatedAt:Date.now() };
   },
   async save(){
