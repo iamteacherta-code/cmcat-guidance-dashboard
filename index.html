@@ -230,14 +230,36 @@
       // เอกสารสำคัญของฝ่าย (สาธารณะ)
       const icon = t => /pdf/i.test(t) ? "📄" : /image/i.test(t) ? "🖼️" : /word|document/i.test(t) ? "📝" : /sheet|excel|csv/i.test(t) ? "📊" : "📎";
       const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+      // เปิดไฟล์ base64 ผ่าน Blob URL — เบราว์เซอร์บล็อกการเปิด data: URL ตรง ๆ
+      const openDataUri = (dataUri, name) => {
+        try {
+          const c = dataUri.indexOf(","), meta = dataUri.slice(0, c), b64 = dataUri.slice(c + 1);
+          const mime = (meta.match(/data:([^;]+)/) || [])[1] || "application/octet-stream";
+          const bin = atob(b64), arr = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+          const url = URL.createObjectURL(new Blob([arr], { type: mime }));
+          if (!window.open(url, "_blank")) { const a = document.createElement("a"); a.href = url; a.download = name || "document"; document.body.appendChild(a); a.click(); a.remove(); }
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+        } catch (e) { alert("เปิดไฟล์ไม่สำเร็จ: " + e.message); }
+      };
       onSnapshot(query(collection(db, "config"), where("kind", "==", "document")),
         snap => {
           const box = document.getElementById("deptDocs"); if (!box) return;
           const docs = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => String(b.date || b.id).localeCompare(String(a.date || a.id)));
-          box.innerHTML = docs.length ? docs.map(d => `<a class="doc-card" href="${esc(d.url || d.data)}" target="_blank" rel="noopener">
-            <span class="di">${d.url ? "🔗" : icon(d.type || d.name)}</span><span class="dn">${esc(d.name)}</span>
-            <span class="dm">${d.url ? "เปิดลิงก์" : ((d.size || 0) / 1024).toFixed(0) + " KB"}</span></a>`).join("")
-            : `<p class="muted-sm">ยังไม่มีเอกสารเผยแพร่จากฝ่าย</p>`;
+          box.innerHTML = docs.length ? docs.map(d => {
+            const broken = !d.url && !d.data;
+            const meta = d.url ? "เปิดลิงก์" : broken ? "ใหญ่เกินไป" : ((d.size || 0) / 1024).toFixed(0) + " KB";
+            const ic = d.url ? "🔗" : broken ? "⚠️" : icon(d.type || d.name);
+            return d.url
+              ? `<a class="doc-card" href="${esc(d.url)}" target="_blank" rel="noopener"><span class="di">${ic}</span><span class="dn">${esc(d.name)}</span><span class="dm">${meta}</span></a>`
+              : `<a class="doc-card${broken ? " broken" : ""}" href="#" data-id="${esc(d.id)}"><span class="di">${ic}</span><span class="dn">${esc(d.name)}</span><span class="dm">${meta}</span></a>`;
+          }).join("") : `<p class="muted-sm">ยังไม่มีเอกสารเผยแพร่จากฝ่าย</p>`;
+          box.querySelectorAll("a[data-id]").forEach(a => a.addEventListener("click", ev => {
+            ev.preventDefault();
+            const d = docs.find(x => x.id === a.dataset.id); if (!d) return;
+            if (!d.data) { alert("ไฟล์นี้เปิดไม่ได้ เพราะมีขนาดใหญ่เกินกว่าที่ระบบจะจัดเก็บได้ (จำกัด ~1 MB)\nโปรดลบรายการนี้ แล้วอัปโหลดใหม่ด้วย “ลิงก์ Google Drive” แทน"); return; }
+            openDataUri(d.data, d.name);
+          }));
         },
         err => console.info("เอกสารฝ่าย: " + (err && err.code)));
     } catch (e) { console.warn("เริ่ม Firebase ไม่สำเร็จ:", e); }

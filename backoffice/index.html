@@ -480,6 +480,18 @@ let unsub = null;
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const todayTH = () => { const d=new Date(); return (d.getFullYear()+543)+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+// เปิดไฟล์ base64 ผ่าน Blob URL — เบราว์เซอร์บล็อกการเปิด data: URL ตรง ๆ
+function openDataUri(dataUri,name){
+  try{
+    const c=dataUri.indexOf(","), meta=dataUri.slice(0,c), b64=dataUri.slice(c+1);
+    const mime=(meta.match(/data:([^;]+)/)||[])[1]||"application/octet-stream";
+    const bin=atob(b64), arr=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+    const url=URL.createObjectURL(new Blob([arr],{type:mime}));
+    if(!window.open(url,"_blank")){ const a=document.createElement("a"); a.href=url; a.download=name||"document"; document.body.appendChild(a); a.click(); a.remove(); }
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }catch(e){ alert("เปิดไฟล์ไม่สำเร็จ: "+e.message); }
+}
 
 /* ================= AUTH ================= */
 const Gate = {
@@ -827,10 +839,15 @@ const Docs = {
     const box=$("docList"); if(!box)return;
     box.innerHTML=docs.length?docs.map(d=>`<div class="doc-item">
       <span class="ic">${this.icon(d)}</span>
-      <div class="grow"><div class="nm">${esc(d.name)}</div><div class="mt">${d.url?"ลิงก์ภายนอก":(((d.size||0)/1024).toFixed(0)+" KB")} · ${esc(d.date||"")}</div></div>
+      <div class="grow"><div class="nm">${esc(d.name)}</div><div class="mt">${d.url?"ลิงก์ภายนอก":((!d.data)?"⚠️ ไฟล์ใหญ่เกินไป ไม่ได้ถูกจัดเก็บ":(((d.size||0)/1024).toFixed(0)+" KB"))} · ${esc(d.date||"")}</div></div>
       <button class="btn sec sm" data-dl="${d.id}">เปิด</button><button class="btn danger sm" data-del="${d.id}">ลบ</button>
     </div>`).join(""):'<div style="font-size:.84rem;color:var(--muted)">ยังไม่มีเอกสาร</div>';
-    box.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>{const d=docs.find(x=>x.id===b.dataset.dl);const link=d&&(d.url||d.data);if(!link)return;if(d.url)window.open(d.url,"_blank");else{const w=window.open();if(w)w.location=d.data;}});
+    box.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>{
+      const d=docs.find(x=>x.id===b.dataset.dl); if(!d)return;
+      if(d.url){ window.open(d.url,"_blank"); return; }
+      if(!d.data){ alert("ไฟล์นี้เปิดไม่ได้ เพราะมีขนาดใหญ่เกินกว่าที่ระบบจะจัดเก็บได้ (จำกัด ~1 MB)\nโปรดลบรายการนี้ แล้วเพิ่มใหม่ด้วย “ลิงก์ Google Drive” แทน"); return; }
+      openDataUri(d.data,d.name);
+    });
     box.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>this.del(b.dataset.del,docs.find(x=>x.id===b.dataset.del)));
   },
   async addLink(){
