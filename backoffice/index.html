@@ -317,7 +317,7 @@ tbody tr:hover{background:var(--green-bg)}
           <button class="btn" id="btnDocLink">+ เพิ่มลิงก์</button>
         </div>
         <p style="font-size:.76rem;color:var(--muted);margin:6px 0 0">💡 <b>Google Drive:</b> คลิกขวาที่ไฟล์ → แชร์ → เปลี่ยนเป็น “<b>ทุกคนที่มีลิงก์</b>” → คัดลอกลิงก์มาวาง</p>
-        <div class="sub-h" style="margin-top:16px">หรืออัปโหลดไฟล์เล็ก (ไม่เกิน ~1 MB) เก็บในระบบโดยตรง</div>
+        <div class="sub-h" style="margin-top:16px">หรืออัปโหลดไฟล์เล็ก (ไม่เกิน ~0.7 MB) เก็บในระบบโดยตรง — ไฟล์ใหญ่กว่านี้ให้ใช้ลิงก์ด้านบน</div>
         <div class="row">
           <button class="btn sec" id="btnDocUp">📎 อัปโหลดไฟล์เล็ก</button>
           <input type="file" id="docFile" hidden/>
@@ -859,13 +859,21 @@ const Docs = {
     }catch(e){ alert("เพิ่มไม่สำเร็จ: "+(e.code||e.message)); }
   },
   add(file){
-    if(file.size>750*1024 && !confirm("ไฟล์ใหญ่ ("+(file.size/1048576).toFixed(2)+" MB) เกินขนาดแนะนำ ~0.7MB อาจอัปโหลดไม่สำเร็จ (จำกัด 1MB) ดำเนินการต่อ?"))return;
+    const MAX=700*1024;   // เผื่อ base64 (+33%) ให้รวมแล้วไม่เกินขีดจำกัด Firestore ~1 MB
+    if(file.size>MAX){     // กันไว้ก่อน ไม่ให้เกิดรายการเสียแบบไม่มีไฟล์
+      alert("ไฟล์นี้ใหญ่เกินไป ("+(file.size/1048576).toFixed(1)+" MB)\nระบบเก็บไฟล์โดยตรงได้ไม่เกิน ~0.7 MB\n\nโปรดใช้ช่อง “➕ เพิ่มด้วยลิงก์” ด้านบนแทน — อัปโหลดไฟล์ขึ้น Google Drive แล้ววางลิงก์ (ไฟล์ใหญ่แค่ไหนก็ได้)");
+      const dn=$("docName"); if(dn&&!dn.value.trim()) dn.value=file.name.replace(/\.[^.]+$/,"");
+      if($("docUrl")) $("docUrl").focus();
+      return;
+    }
     $("docStatus").textContent="กำลังอัปโหลด…";
     const r=new FileReader();
+    r.onerror=()=>{ $("docStatus").textContent=""; alert("อ่านไฟล์ไม่สำเร็จ กรุณาลองใหม่"); };
     r.onload=async()=>{
+      if(!r.result){ $("docStatus").textContent=""; alert("อ่านไฟล์ไม่สำเร็จ (ไฟล์อาจเสียหาย)"); return; }
       try{ await setDoc(doc(db,"config","doc_"+Date.now()),{kind:"document",name:file.name,type:file.type||"",size:file.size,data:r.result,date:todayTH()});
         $("docStatus").textContent="อัปโหลดสำเร็จ ✓"; setTimeout(()=>{if($("docStatus"))$("docStatus").textContent="";},2000);
-      }catch(e){ $("docStatus").textContent=""; alert("อัปโหลดไม่สำเร็จ: "+(e.code||e.message)+"\n(ไฟล์ต้องไม่เกิน 1MB)"); }
+      }catch(e){ $("docStatus").textContent=""; alert("อัปโหลดไม่สำเร็จ: "+(e.code||e.message)+"\nโปรดใช้ “เพิ่มด้วยลิงก์” แทน"); }
     };
     r.readAsDataURL(file);
   },
